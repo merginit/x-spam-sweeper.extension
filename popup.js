@@ -353,35 +353,107 @@ menuBtn.addEventListener('click', (e) => {
     toggleSubmenu();
 });
 
-// Sweep button - combined action
-sweepBtn.addEventListener('click', () => {
+/**
+ * Perform batch action on selected users
+ * @param {string} actionType - 'delete', 'block', 'report', or 'sweep'
+ * @param {string} actionMessage - Message prefix for status
+ */
+async function performBatchAction(actionType, actionMessage) {
     const selected = Array.from(selectedUsernames);
-    setStatus(`Sweep ${selected.length} accounts (Report + Block + Delete) - Coming soon!`);
-    console.log('Sweep accounts:', selected);
+    if (selected.length === 0) return;
+
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    if (!tab) {
+        setStatus('No active tab found', 'error');
+        return;
+    }
+
+    // Disable buttons during processing
+    sweepBtn.disabled = true;
+    menuBtn.disabled = true;
+    reportBtn.disabled = true;
+    blockBtn.disabled = true;
+    deleteBtn.disabled = true;
+
+    let successCount = 0;
+    let errorCount = 0;
+
+    for (let i = 0; i < selected.length; i++) {
+        const username = selected[i];
+        setStatus(`${actionMessage} @${username} (${i + 1}/${selected.length})...`);
+
+        try {
+            const action = actionType === 'sweep' ? 'sweepUser' :
+                actionType === 'delete' ? 'deleteConversation' :
+                    actionType === 'block' ? 'blockUser' : 'reportUser';
+
+            const response = await chrome.tabs.sendMessage(tab.id, {
+                action: action,
+                username: username
+            });
+
+            if (response?.success) {
+                successCount++;
+                // Remove from selection and list on success
+                selectedUsernames.delete(username);
+                const item = document.querySelector(`[data-username="${username}"]`);
+                if (item && actionType === 'delete') {
+                    item.remove();
+                }
+            } else {
+                errorCount++;
+                console.error(`Failed ${actionType} for @${username}:`, response?.message);
+            }
+        } catch (error) {
+            errorCount++;
+            console.error(`Error ${actionType} for @${username}:`, error);
+        }
+
+        // Small delay between actions to avoid rate limiting
+        if (i < selected.length - 1) {
+            await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+    }
+
+    // Re-enable buttons
+    updateSelectionUI();
+
+    // Show final status
+    if (errorCount === 0) {
+        setStatus(`${actionMessage} completed: ${successCount} accounts`, 'success');
+    } else {
+        setStatus(`${actionMessage}: ${successCount} succeeded, ${errorCount} failed`, 'error');
+    }
+
+    // Refresh list after sweep or delete to show updated state
+    if (actionType === 'sweep' || actionType === 'delete') {
+        await new Promise(resolve => setTimeout(resolve, 500));
+        await fetchMessageRequests();
+    }
+}
+
+// Sweep button - combined action (Report + Block + Delete)
+sweepBtn.addEventListener('click', async () => {
+    submenu.classList.add('hidden');
+    await performBatchAction('sweep', 'Sweeping');
 });
 
 // Delete button
-deleteBtn.addEventListener('click', () => {
-    const selected = Array.from(selectedUsernames);
-    setStatus(`Delete ${selected.length} conversations - Coming soon!`);
-    console.log('Delete conversations for:', selected);
+deleteBtn.addEventListener('click', async () => {
     submenu.classList.add('hidden');
+    await performBatchAction('delete', 'Deleting');
 });
 
 // Block button
-blockBtn.addEventListener('click', () => {
-    const selected = Array.from(selectedUsernames);
-    setStatus(`Block ${selected.length} accounts - Coming soon!`);
-    console.log('Block accounts:', selected);
+blockBtn.addEventListener('click', async () => {
     submenu.classList.add('hidden');
+    await performBatchAction('block', 'Blocking');
 });
 
 // Report button
-reportBtn.addEventListener('click', () => {
-    const selected = Array.from(selectedUsernames);
-    setStatus(`Report ${selected.length} accounts - Coming soon!`);
-    console.log('Report accounts:', selected);
+reportBtn.addEventListener('click', async () => {
     submenu.classList.add('hidden');
+    await performBatchAction('report', 'Reporting');
 });
 
 document.addEventListener('DOMContentLoaded', fetchMessageRequests);

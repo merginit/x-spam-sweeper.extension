@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "__MSG_appName__",
   "short_name": "__MSG_appShortName__",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "description": "__MSG_appDesc__",
   "homepage_url": "https://github.com/jonasfroeller/x-spam-sweeper",
   "default_locale": "en",
@@ -24,7 +24,8 @@
       "js": [
         "content.js"
       ],
-      "run_at": "document_idle"
+      "run_at": "document_idle",
+      "all_frames": true
     }
   ],
   "background": {

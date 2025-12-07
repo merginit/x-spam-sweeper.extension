@@ -2,13 +2,27 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.4] - 2025-12-07
+
+### Added
+- **Functional actions**: Delete, Block, Report now work (report works partially) via DOM automation
+- **Sweep** performs Report → Block → Delete sequentially
+- `all_frames: true` manifest setting for report iframe support
+- Sequential batch processing with progress status
+- Automatic spam selection in report dialog iframe (theoretically)
+
+### Changed
+- Actions now perform real DOM automation instead of placeholders
+
+---
+
 ## [0.1.3] - 2025-12-07
 
 ### Added
 - "Sweep" button for combined action (Report + Block + Delete in one click)
-- Delete conversation action
+- Delete conversation button
 - Options menu button with dropdown submenu
-- Individual actions (Delete, Block, Report) now in submenu with descriptions
+- Individual actions (Delete, Block, Report) in submenu with descriptions
 
 ### Changed
 - Moved Report and Block buttons from action bar into dropdown submenu
