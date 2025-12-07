@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.5] - 2025-12-07
+
+### Fixed
+- **Critical Report Automation**: Solved issue where "It's spam" and "Submit" buttons were not clickable in the report iframe.
+- **Smart Quote Handling**: Added normalization for typographic apostrophes (`It’s` vs `It's`).
+- **Button Detection**: Added explicit support for "Send report to X" buttons and fallback mechanisms.
+
+### Changed
+- **Enhanced Click Simulation**: Updated `nativeClick` to dispatch full `pointer` and `mouse` event sequences for better React compatibility.
+- **Aggressive Interaction Strategy**: Script now intelligently targets interactive parents and exhaustively clicks valid candidates to bypass ephemeral event listeners.
+
+---
+
 ## [0.1.4] - 2025-12-07
 
 ### Added

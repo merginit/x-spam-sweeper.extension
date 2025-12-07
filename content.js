@@ -28,17 +28,129 @@
 
     /**
      * Native click helper for React compatibility
-     * Regular .click() is sometimes ignored by React components
+     * Regular .click() is sometimes ignored by React components, so we simulate full event sequence
      */
     function nativeClick(element) {
         if (!element) return false;
-        const event = new MouseEvent('click', {
-            view: window,
-            bubbles: true,
-            cancelable: true
+
+        const eventTypes = [
+            'pointerdown', 'mousedown',
+            'pointerup', 'mouseup',
+            'click'
+        ];
+
+        eventTypes.forEach(type => {
+            const event = new MouseEvent(type, {
+                view: window,
+                bubbles: true,
+                cancelable: true,
+                buttons: 1,
+                composed: true // Important for Shadow DOM boundaries if present
+            });
+            element.dispatchEvent(event);
         });
-        element.dispatchEvent(event);
         return true;
+    }
+
+    /**
+     * Find and click an interactive element containing specific text
+     * Traverses up from text matches to find clickable parents
+     * @param {string} text - Text to match
+     * @param {Array<string>} [tags=['BUTTON', 'A', 'INPUT']] - Interactive tags to look for
+     * @returns {boolean} True if clicked
+     */
+    function clickElementWithText(text, tags = ['BUTTON', 'A', 'INPUT', 'DIV']) {
+        // Normalize quotes in search text (handle smart quotes)
+        const lowerText = text.toLowerCase().replace(/[\u2018\u2019]/g, "'");
+
+        // Strategy: Find all elements containing the text
+        const allElements = document.querySelectorAll('*');
+        let candidates = [];
+
+        for (const el of allElements) {
+            // Check finding direct text content or very close to it
+            // Normalize element content too
+            const content = el.textContent.toLowerCase().replace(/[\u2018\u2019]/g, "'");
+
+            if (el.children.length === 0 && content.includes(lowerText)) {
+                candidates.push(el);
+            } else if (el.childNodes.length > 0) {
+                // Check immediate text nodes
+                for (const node of el.childNodes) {
+                    if (node.nodeType === Node.TEXT_NODE) {
+                        const nodeContent = node.textContent.toLowerCase().replace(/[\u2018\u2019]/g, "'");
+                        if (nodeContent.includes(lowerText)) {
+                            candidates.push(el);
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+
+        if (candidates.length === 0) return false;
+
+        console.log(`XSpamSweeper: Found ${candidates.length} candidates for text "${text}"`);
+        // Debug: Visual feedback
+        candidates.forEach(c => c.style.border = "2px solid red");
+
+        // SORT CANDIDATES to prioritize Buttons/Links over generic text
+        candidates.sort((a, b) => {
+            // Helper to score an element chain
+            const getScore = (el) => {
+                let score = 0;
+                let curr = el;
+                for (let i = 0; i < 5; i++) {
+                    if (!curr) break;
+                    const tag = curr.tagName;
+                    const role = curr.getAttribute('role');
+                    if (tag === 'BUTTON' || tag === 'A' || tag === 'INPUT') score += 10;
+                    if (role === 'button' || role === 'link' || role === 'menuitem') score += 5;
+                    curr = curr.parentElement;
+                }
+                return score;
+            };
+            return getScore(b) - getScore(a); // High score first
+        });
+
+        let anyClicked = false;
+
+        for (const candidate of candidates) {
+            console.log(`XSpamSweeper: Attacking candidate <${candidate.tagName}> for "${text}"`);
+
+            // AGGRESSIVE STRATEGY: Click the element and ALL its parents up to a certain level.
+
+            let current = candidate;
+            let clickedInChain = 0;
+
+            // 1. Click the text node container itself first
+            nativeClick(current);
+
+            // 2. Traverse up and click parents
+            for (let i = 0; i < 7; i++) {
+                if (!current.parentElement) break;
+                current = current.parentElement;
+
+                // Skip clicking obviously huge containers like BODY/HTML
+                if (current.tagName === 'BODY' || current.tagName === 'HTML' || current.tagName === 'IFRAME') break;
+
+                // Visual debug for what we are clicking
+                // const oldBorder = current.style.border;
+                current.style.border = "2px solid orange";
+
+                // console.log(`XSpamSweeper: Aggressive click on parent <${current.tagName}> class="${current.className}"`);
+                nativeClick(current);
+                clickedInChain++;
+            }
+
+            if (clickedInChain > 0) anyClicked = true;
+
+            // CRITICAL CHANGE: DO NOT RETURN EARLY. 
+            // If we have multiple candidates (e.g. description text AND actual button),
+            // we must ensure we hit the button even if we hit the description first.
+        }
+
+        return anyClicked;
     }
 
     /**
@@ -376,9 +488,30 @@
                 await handleConfirmation();
             }
 
-            // For report, wait for iframe automation and then click Done button in parent
+            // For report, trigger programmatic iframe injection and wait for automation
             if (action === 'report') {
-                // Wait for iframe content script to handle the spam selection and submit
+                // Wait for report dialog iframe to appear (replacing fixed delay)
+                console.log('XSpamSweeper: Waiting for report iframe to appear...');
+                const iframe = await waitForElement('iframe[src*="report_story"]', 8000);
+
+                if (iframe) {
+                    console.log('XSpamSweeper: Iframe found, waiting 1s for load...');
+                    await delay(1000); // Wait for content inside iframe
+
+                    // Tell background script to inject automation code into all frames
+                    console.log('XSpamSweeper: Requesting background script to inject into iframe');
+                    try {
+                        chrome.runtime.sendMessage({ action: 'injectReportHandler' });
+                    } catch (e) {
+                        console.error('XSpamSweeper: Failed to send injection request', e);
+                    }
+                } else {
+                    console.error('XSpamSweeper: Report iframe did not appear');
+                    await closeHoverCard();
+                    return { success: false, message: `Report iframe missing for @${username}` };
+                }
+
+                // Wait for iframe automation to complete
                 await delay(6000);
 
                 // Now look for Done button in the parent modal
@@ -414,22 +547,21 @@
 
         await delay(500);
 
-        // Look for Spam option using XPath for text matching
+        // Try specific text first "It's spam"
+        if (clickElementWithText("It's spam")) {
+            await delay(500);
+            return clickSubmitButtons();
+        }
+
+        // Fallback to searching spans if the robust helper failed (though helper covers it)
+        console.log('XSpamSweeper: "It\'s spam" text not found, trying loose search');
         const spans = document.querySelectorAll('span');
         for (const span of spans) {
-            if (span.textContent.trim() === 'Spam') {
+            const spanText = span.textContent.trim().toLowerCase();
+            if (spanText.includes('spam') && !spanText.includes('learn')) {
                 nativeClick(span);
                 await delay(500);
-
-                // Click Next/Submit button
-                const nextBtns = document.querySelectorAll('button');
-                for (const btn of nextBtns) {
-                    if (btn.textContent.includes('Next') || btn.textContent.includes('Submit')) {
-                        nativeClick(btn);
-                        break;
-                    }
-                }
-                break;
+                return clickSubmitButtons();
             }
         }
     }
@@ -527,46 +659,70 @@
             for (let attempt = 0; attempt < maxAttempts; attempt++) {
                 await delay(700);
 
-                const buttons = document.querySelectorAll('button');
+                console.log(`XSpamSweeper: Looking for submit/next buttons (attempt ${attempt + 1})`);
+
+                // Try specific button texts including "Send report to X" and "Block" for subsequent steps
+                const buttonTexts = ['Next', 'Submit', 'Report', 'Block', 'Done', 'Send report to X'];
                 let clicked = false;
 
-                for (const btn of buttons) {
-                    const text = (btn.textContent || '').trim();
-                    // Look for Submit, Report, Next, or Done buttons
-                    if (text === 'Submit' || text === 'Report' || text === 'Next' || text.includes('Submit')) {
-                        console.log(`XSpamSweeper: Clicking "${text}" button`);
-                        nativeClick(btn);
+                for (const text of buttonTexts) {
+                    if (clickElementWithText(text, ['BUTTON', 'DIV'])) {
+                        console.log(`XSpamSweeper: Clicked button "${text}"`);
                         clicked = true;
-                        await delay(800);
+                        // DO NOT break here. Click any other matches too? 
+                        // No, for buttons we typically just want one.
                         break;
                     }
+                }
+
+                if (clicked) {
+                    await delay(800);
+                    // Should we return? Or keep clicking if multiple steps? 
+                    // Usually one click per step. 
+                    // But this function might be called multiple times.
+                    return true;
                 }
 
                 if (!clicked) {
                     console.log(`XSpamSweeper: No submit button found on attempt ${attempt + 1}`);
                 }
             }
+            return false;
         }
 
-        // Function to attempt spam selection with retries
-        async function attemptSpamSelection(retries = 8) {
+        async function attemptSpamSelection(retries = 20) {
+            console.log("XSpamSweeper: Iframe text content available:", document.body.innerText.substring(0, 100) + "...");
+
             for (let i = 0; i < retries; i++) {
-                await delay(600);
+                await delay(1000);
 
-                // Look for Spam option
-                const spans = document.querySelectorAll('span');
-                for (const span of spans) {
-                    if (span.textContent.trim() === 'Spam') {
-                        console.log('XSpamSweeper: Found Spam option, clicking...');
-                        nativeClick(span);
+                // 1. Try finding "It's spam" (using new smart-quote insensitive matcher)
+                if (clickElementWithText("It's spam")) {
+                    console.log('XSpamSweeper: Clicked "It\'s spam"');
+                    await delay(800);
+                    await clickSubmitButtons();
+                    return true;
+                }
 
-                        // Wait and then click submit buttons
+                // 2. ALSO check for Next/Submit buttons directly.
+                // This handles cases where we missed the first step, or user clicked it, 
+                // or we are already on the confirmation page ("Send report to X")
+                if (await clickSubmitButtons(1)) {
+                    console.log('XSpamSweeper: Clicked a submit button in catch-up mode');
+                    return true;
+                }
+
+                console.log(`XSpamSweeper: "It's spam" option not found, retry ${i + 1}/${retries}`);
+
+                // Fallback: try finding just "spam"
+                if (i > 5) {
+                    if (clickElementWithText("spam")) {
+                        console.log('XSpamSweeper: Clicked "spam" (loose match)');
                         await delay(800);
                         await clickSubmitButtons();
                         return true;
                     }
                 }
-                console.log(`XSpamSweeper: Spam option not found, retry ${i + 1}/${retries}`);
             }
             console.log('XSpamSweeper: Could not find Spam option after retries');
             return false;
@@ -581,4 +737,4 @@
     }
 
     console.log('XSpamSweeper: Content script loaded' + (isInReportIframe() ? ' (in report iframe)' : ''));
-})(); // End IIFE
+})();
