@@ -2,12 +2,24 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.2] - 2025-12-07
+
+### Added
+- Automatic content script injection when connection fails
+- `scripting` permission for programmatic script injection
+
+### Fixed
+- "Could not establish connection" error when page was loaded before extension
+
+---
+
 ## [0.1.1] - 2025-12-07
 
 ### Added
 - Initial release with core popup functionality
 - Content script to extract message requests from X DOM
   - Extracts username, display name, avatar URL, message preview, and date
+  - Preserves emojis in names and messages
   - Only activates on `x.com/messages/requests`
 - Popup UI with dark theme matching X's design
   - Header with refresh button

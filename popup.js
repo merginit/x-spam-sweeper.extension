@@ -203,6 +203,22 @@ function renderRequestsList() {
 }
 
 /**
+ * Inject content script into the tab
+ */
+async function injectContentScript(tabId) {
+    try {
+        await chrome.scripting.executeScript({
+            target: { tabId },
+            files: ['content.js']
+        });
+        return true;
+    } catch (error) {
+        console.error('XSpamSweeper: Failed to inject content script', error);
+        return false;
+    }
+}
+
+/**
  * Fetch message requests from the content script
  */
 async function fetchMessageRequests() {
@@ -224,8 +240,27 @@ async function fetchMessageRequests() {
             return;
         }
 
-        // Send message to content script
-        const response = await chrome.tabs.sendMessage(tab.id, { action: 'getMessageRequests' });
+        let response;
+
+        try {
+            // Try to send message to content script
+            response = await chrome.tabs.sendMessage(tab.id, { action: 'getMessageRequests' });
+        } catch (error) {
+            // Content script not loaded - inject it and retry
+            if (error.message?.includes('Could not establish connection')) {
+                const injected = await injectContentScript(tab.id);
+                if (injected) {
+                    // Wait a moment for the script to initialize
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                    response = await chrome.tabs.sendMessage(tab.id, { action: 'getMessageRequests' });
+                } else {
+                    showError('Could not load extension on this page. Please refresh.');
+                    return;
+                }
+            } else {
+                throw error;
+            }
+        }
 
         if (!response) {
             showError('Could not connect to page. Please refresh and try again.');
@@ -250,12 +285,7 @@ async function fetchMessageRequests() {
 
     } catch (error) {
         console.error('XSpamSweeper: Error fetching requests', error);
-
-        if (error.message?.includes('Could not establish connection')) {
-            showError('Content script not loaded. Please refresh the page.', true);
-        } else {
-            showError('Failed to fetch message requests. Please try again.');
-        }
+        showError('Failed to fetch message requests. Please try again.');
     }
 }
 
