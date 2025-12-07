@@ -57,20 +57,58 @@
         <span id="selectionCount">0 selected</span>
       </div>
       <div class="action-buttons">
-        <button id="reportBtn" class="btn btn-danger" disabled>
+        <button id="sweepBtn" class="btn btn-danger" disabled title="Report, Block & Delete">
           <svg viewBox="0 0 24 24" fill="currentColor">
             <path
               d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" />
           </svg>
-          Report
+          Sweep
         </button>
-        <button id="blockBtn" class="btn btn-secondary" disabled>
-          <svg viewBox="0 0 24 24" fill="currentColor">
-            <path
-              d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zM4 12c0-4.42 3.58-8 8-8 1.85 0 3.55.63 4.9 1.69L5.69 16.9C4.63 15.55 4 13.85 4 12zm8 8c-1.85 0-3.55-.63-4.9-1.69L18.31 7.1C19.37 8.45 20 10.15 20 12c0 4.42-3.58 8-8 8z" />
-          </svg>
-          Block
-        </button>
+        <div class="menu-container">
+          <button id="menuBtn" class="menu-btn" disabled title="Options menu" aria-label="Options menu">
+            <svg viewBox="0 0 24 24" fill="currentColor">
+              <path
+                d="M12 3.75c-4.56 0-8.25 3.69-8.25 8.25s3.69 8.25 8.25 8.25 8.25-3.69 8.25-8.25S16.56 3.75 12 3.75zM1.75 12C1.75 6.34 6.34 1.75 12 1.75S22.25 6.34 22.25 12 17.66 22.25 12 22.25 1.75 17.66 1.75 12zm8.84 0l-2.3-2.29 1.42-1.42 2.29 2.3 2.29-2.3 1.42 1.42-2.3 2.29 2.3 2.29-1.42 1.42-2.29-2.3-2.29 2.3-1.42-1.42 2.3-2.29z" />
+            </svg>
+          </button>
+          <div id="submenu" class="submenu hidden">
+            <button id="deleteBtn" class="submenu-item" role="menuitem">
+              <div class="submenu-icon danger">
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                  <path
+                    d="M16 6V4.5C16 3.12 14.88 2 13.5 2h-3C9.11 2 8 3.12 8 4.5V6H3v2h1.06l.81 11.21C4.98 20.78 6.28 22 7.86 22h8.27c1.58 0 2.88-1.22 3-2.79L19.93 8H21V6h-5zm-6-1.5c0-.28.22-.5.5-.5h3c.27 0 .5.22.5.5V6h-4V4.5zm7.13 14.57c-.04.52-.47.93-1 .93H7.86c-.53 0-.96-.41-1-.93L6.07 8h11.85l-.79 11.07zM9 17v-6h2v6H9zm4 0v-6h2v6h-2z" />
+                </svg>
+              </div>
+              <div class="submenu-content">
+                <span class="submenu-title danger">Delete conversation</span>
+                <span class="submenu-desc">This conversation will be deleted from your inbox.</span>
+              </div>
+            </button>
+            <button id="blockBtn" class="submenu-item" role="menuitem">
+              <div class="submenu-icon">
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                  <path
+                    d="M12 3.75c-4.55 0-8.25 3.69-8.25 8.25 0 1.92.66 3.68 1.75 5.08L17.09 5.5C15.68 4.4 13.92 3.75 12 3.75zm6.5 3.17L6.92 18.5c1.4 1.1 3.16 1.75 5.08 1.75 4.56 0 8.25-3.69 8.25-8.25 0-1.92-.65-3.68-1.75-5.08zM1.75 12C1.75 6.34 6.34 1.75 12 1.75S22.25 6.34 22.25 12 17.66 22.25 12 22.25 1.75 17.66 1.75 12z" />
+                </svg>
+              </div>
+              <div class="submenu-content">
+                <span class="submenu-title">Block</span>
+                <span class="submenu-desc">Block selected accounts from sending you messages.</span>
+              </div>
+            </button>
+            <button id="reportBtn" class="submenu-item" role="menuitem">
+              <div class="submenu-icon">
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M3 2h18.61l-3.5 7 3.5 7H5v6H3V2zm2 12h13.38l-2.5-5 2.5-5H5v10z" />
+                </svg>
+              </div>
+              <div class="submenu-content">
+                <span class="submenu-title">Report for spam</span>
+                <span class="submenu-desc">Let X know about spam or abuse.</span>
+              </div>
+            </button>
+          </div>
+        </div>
       </div>
     </div>
 

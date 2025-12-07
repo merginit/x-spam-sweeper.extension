@@ -31,6 +31,10 @@ const selectAllCheckbox = document.getElementById('selectAll');
 const selectionCount = document.getElementById('selectionCount');
 const reportBtn = document.getElementById('reportBtn');
 const blockBtn = document.getElementById('blockBtn');
+const sweepBtn = document.getElementById('sweepBtn');
+const menuBtn = document.getElementById('menuBtn');
+const deleteBtn = document.getElementById('deleteBtn');
+const submenu = document.getElementById('submenu');
 const refreshBtn = document.getElementById('refreshBtn');
 const goToRequestsBtn = document.getElementById('goToRequestsBtn');
 const statusBar = document.getElementById('status');
@@ -72,6 +76,8 @@ function updateSelectionUI() {
     const hasSelection = count > 0;
     reportBtn.disabled = !hasSelection;
     blockBtn.disabled = !hasSelection;
+    sweepBtn.disabled = !hasSelection;
+    menuBtn.disabled = !hasSelection;
 
     // Update select all checkbox state
     if (count === 0) {
@@ -329,17 +335,53 @@ refreshBtn.addEventListener('click', fetchMessageRequests);
 selectAllCheckbox.addEventListener('change', toggleSelectAll);
 goToRequestsBtn.addEventListener('click', goToMessageRequests);
 
-// Report and Block buttons (placeholder for now)
-reportBtn.addEventListener('click', () => {
-    const selected = Array.from(selectedUsernames);
-    setStatus(`Report ${selected.length} accounts - Coming soon!`);
-    console.log('Report accounts:', selected);
+// Toggle submenu visibility
+function toggleSubmenu() {
+    submenu.classList.toggle('hidden');
+}
+
+// Close submenu when clicking outside
+document.addEventListener('click', (e) => {
+    if (!e.target.closest('.menu-container')) {
+        submenu.classList.add('hidden');
+    }
 });
 
+// Menu button
+menuBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    toggleSubmenu();
+});
+
+// Sweep button - combined action
+sweepBtn.addEventListener('click', () => {
+    const selected = Array.from(selectedUsernames);
+    setStatus(`Sweep ${selected.length} accounts (Report + Block + Delete) - Coming soon!`);
+    console.log('Sweep accounts:', selected);
+});
+
+// Delete button
+deleteBtn.addEventListener('click', () => {
+    const selected = Array.from(selectedUsernames);
+    setStatus(`Delete ${selected.length} conversations - Coming soon!`);
+    console.log('Delete conversations for:', selected);
+    submenu.classList.add('hidden');
+});
+
+// Block button
 blockBtn.addEventListener('click', () => {
     const selected = Array.from(selectedUsernames);
     setStatus(`Block ${selected.length} accounts - Coming soon!`);
     console.log('Block accounts:', selected);
+    submenu.classList.add('hidden');
+});
+
+// Report button
+reportBtn.addEventListener('click', () => {
+    const selected = Array.from(selectedUsernames);
+    setStatus(`Report ${selected.length} accounts - Coming soon!`);
+    console.log('Report accounts:', selected);
+    submenu.classList.add('hidden');
 });
 
 document.addEventListener('DOMContentLoaded', fetchMessageRequests);

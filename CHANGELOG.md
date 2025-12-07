@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.3] - 2025-12-07
+
+### Added
+- "Sweep" button for combined action (Report + Block + Delete in one click)
+- Delete conversation action
+- Options menu button with dropdown submenu
+- Individual actions (Delete, Block, Report) now in submenu with descriptions
+
+### Changed
+- Moved Report and Block buttons from action bar into dropdown submenu
+- Redesigned action bar with X-style UI patterns
+
+---
+
 ## [0.1.2] - 2025-12-07
 
 ### Added
