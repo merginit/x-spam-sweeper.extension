@@ -1,0 +1,14 @@
+{
+    "appName": {
+        "message": "X Spam Sweeper"
+    },
+    "appShortName": {
+        "message": "XSpamSweeper"
+    },
+    "appDesc": {
+        "message": "Spam-Konten in X (Twitter) Nachrichten auf einmal melden und blockieren"
+    },
+    "actionTitle": {
+        "message": "X Spam Sweeper öffnen"
+    }
+}
