@@ -27,6 +27,81 @@
 </head>
 
 <body>
+  <div class="container">
+    <header class="header">
+      <h1 class="title">
+        <svg class="logo" viewBox="0 0 24 24" fill="currentColor">
+          <path
+            d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+        </svg>
+        Spam Sweeper
+      </h1>
+      <div class="header-actions">
+        <button id="refreshBtn" class="icon-btn" title="Refresh">
+          <svg viewBox="0 0 24 24" fill="currentColor">
+            <path
+              d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z" />
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <div id="status" class="status"></div>
+
+    <div id="actionBar" class="action-bar hidden">
+      <div class="selection-info">
+        <label class="checkbox-wrapper">
+          <input type="checkbox" id="selectAll" />
+          <span class="checkmark"></span>
+        </label>
+        <span id="selectionCount">0 selected</span>
+      </div>
+      <div class="action-buttons">
+        <button id="reportBtn" class="btn btn-danger" disabled>
+          <svg viewBox="0 0 24 24" fill="currentColor">
+            <path
+              d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" />
+          </svg>
+          Report
+        </button>
+        <button id="blockBtn" class="btn btn-secondary" disabled>
+          <svg viewBox="0 0 24 24" fill="currentColor">
+            <path
+              d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zM4 12c0-4.42 3.58-8 8-8 1.85 0 3.55.63 4.9 1.69L5.69 16.9C4.63 15.55 4 13.85 4 12zm8 8c-1.85 0-3.55-.63-4.9-1.69L18.31 7.1C19.37 8.45 20 10.15 20 12c0 4.42-3.58 8-8 8z" />
+          </svg>
+          Block
+        </button>
+      </div>
+    </div>
+
+    <div id="requestsList" class="requests-list">
+      <!-- Requests will be populated here -->
+    </div>
+
+    <div id="emptyState" class="empty-state hidden">
+      <svg viewBox="0 0 24 24" fill="currentColor" class="empty-icon">
+        <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z" />
+      </svg>
+      <p>No message requests found</p>
+      <p class="empty-hint">Make sure you're on x.com/messages/requests</p>
+    </div>
+
+    <div id="loadingState" class="loading-state">
+      <div class="spinner"></div>
+      <p>Loading message requests...</p>
+    </div>
+
+    <div id="errorState" class="error-state hidden">
+      <svg viewBox="0 0 24 24" fill="currentColor" class="error-icon">
+        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" />
+      </svg>
+      <p id="errorMessage">An error occurred</p>
+      <button id="goToRequestsBtn" class="btn btn-primary">
+        Go to Message Requests
+      </button>
+    </div>
+  </div>
+
   <script src="shared.js"></script>
   <script src="popup.js"></script>
 </body>
