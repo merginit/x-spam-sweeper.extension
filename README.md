@@ -1,7 +1,7 @@
 # X Spam Sweeper
 
 <div align="center">
-    <img src="./assets/logo.png" alt="icon" width="150" />
+    <img src="./assets/icon.png" alt="icon" width="150" />
 </div>
 
 <div align="center" style="margin-bottom: 2.5rem;">

@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.7] - 2025-12-09
+
+### Added
+- **Extension Icon**: Added custom icon for the extension (toolbar, extensions page, and store).
+
+---
+
 ## [0.1.6] - 2025-12-09
 
 ### Fixed

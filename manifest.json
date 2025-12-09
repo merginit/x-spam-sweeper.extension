@@ -2,13 +2,19 @@
   "manifest_version": 3,
   "name": "__MSG_appName__",
   "short_name": "__MSG_appShortName__",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "description": "__MSG_appDesc__",
   "homepage_url": "https://github.com/jonasfroeller/x-spam-sweeper",
   "default_locale": "en",
+  "icons": {
+    "16": "assets/icon.png",
+    "48": "assets/icon.png",
+    "128": "assets/icon.png"
+  },
   "action": {
     "default_title": "__MSG_actionTitle__",
-    "default_popup": "popup.html"
+    "default_popup": "popup.html",
+    "default_icon": "assets/icon.png"
   },
   "permissions": [
     "activeTab",
