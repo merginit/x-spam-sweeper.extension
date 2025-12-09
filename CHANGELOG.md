@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.6] - 2025-12-09
+
+### Fixed
+- **Sweep False Failures**: Sweep now correctly reports success when X auto-removes conversations after reporting (e.g., when "Block @user" option is selected).
+- **Delete Functionality**: Fixed delete not working - removed confirmation dialog handling.
+- **Report Completion Detection**: Now properly detects "Block @username" and "Mute @username" buttons as valid report completion signals.
+
+### Changed
+- **Smart Conversation Tracking**: Added `isConversationStillVisible()` to detect when conversations are auto-removed by X.
+- **Skip Already Gone**: Sweep now skips block/delete steps if conversation disappears after report, marking as success.
+- **No Auto-Trigger**: Report iframe automation no longer runs automatically - only when extension explicitly initiates a report. This prevents interfering with manual reports.
+
+### Removed
+- Duplicate report automation code from content.js (kept only background.js version).
+
+---
+
 ## [0.1.5] - 2025-12-07
 
 ### Fixed

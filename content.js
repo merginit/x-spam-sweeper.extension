@@ -417,18 +417,12 @@
     }
 
     /**
-     * Handle confirmation dialog if it appears
-     * @returns {Promise<boolean>}
+     * Check if a user's conversation row still exists in the list
+     * @param {string} username - The username to check
+     * @returns {boolean}
      */
-    async function handleConfirmation() {
-        await delay(500);
-        const confirmBtn = document.querySelector('[data-testid="confirmationSheetConfirm"]');
-        if (confirmBtn) {
-            nativeClick(confirmBtn);
-            await delay(500);
-            return true;
-        }
-        return false;
+    function isConversationStillVisible(username) {
+        return findRowByUsername(username) !== null;
     }
 
     /**
@@ -447,9 +441,10 @@
      * Perform an action on a user
      * @param {string} username - The username
      * @param {'delete'|'block'|'report'} action - The action type
-     * @returns {Promise<{success: boolean, message: string}>}
+     * @param {boolean} skipIfGone - If true, return success if user row is already gone
+     * @returns {Promise<{success: boolean, message: string, alreadyGone?: boolean}>}
      */
-    async function performAction(username, action) {
+    async function performAction(username, action, skipIfGone = false) {
         try {
             // Close any existing menu first
             await closeHoverCard();
@@ -457,6 +452,11 @@
             // Find the row
             const row = findRowByUsername(username);
             if (!row) {
+                // If skipIfGone is true, treat missing row as success (already dealt with)
+                if (skipIfGone) {
+                    console.log(`XSpamSweeper: User @${username} already gone from list, skipping ${action}`);
+                    return { success: true, message: `@${username} already removed`, alreadyGone: true };
+                }
                 return { success: false, message: `User @${username} not found in list` };
             }
 
@@ -483,20 +483,25 @@
                 return { success: false, message: `Could not find ${action} option for @${username}` };
             }
 
-            // Handle confirmation for delete (block doesn't need it)
+            // For delete, wait a bit for the action to complete
             if (action === 'delete') {
-                await handleConfirmation();
+                await delay(500);
+                // Verify the row is now gone
+                if (!isConversationStillVisible(username)) {
+                    console.log(`XSpamSweeper: Delete successful - @${username} removed from list`);
+                    return { success: true, message: `delete completed for @${username}` };
+                }
             }
 
             // For report, trigger programmatic iframe injection and wait for automation
             if (action === 'report') {
-                // Wait for report dialog iframe to appear (replacing fixed delay)
+                // Wait for report dialog iframe to appear
                 console.log('XSpamSweeper: Waiting for report iframe to appear...');
                 const iframe = await waitForElement('iframe[src*="report_story"]', 8000);
 
                 if (iframe) {
                     console.log('XSpamSweeper: Iframe found, waiting 1s for load...');
-                    await delay(1000); // Wait for content inside iframe
+                    await delay(1000);
 
                     // Tell background script to inject automation code into all frames
                     console.log('XSpamSweeper: Requesting background script to inject into iframe');
@@ -514,19 +519,34 @@
                 // Wait for iframe automation to complete
                 await delay(6000);
 
-                // Now look for Done button in the parent modal
-                for (let i = 0; i < 5; i++) {
+                // Look for completion buttons: "Done", "Block @username", or "Mute @username"
+                // These indicate the report flow has finished
+                for (let i = 0; i < 8; i++) {
                     const buttons = document.querySelectorAll('button');
                     for (const btn of buttons) {
                         const text = (btn.textContent || '').trim();
-                        if (text === 'Done') {
-                            console.log('XSpamSweeper: Clicking Done button');
+                        if (text === 'Done' || text.startsWith('Block @') || text.startsWith('Mute @')) {
+                            console.log(`XSpamSweeper: Clicking "${text}" button to complete report`);
                             nativeClick(btn);
                             await delay(500);
                             return { success: true, message: `report completed for @${username}` };
                         }
                     }
                     await delay(500);
+
+                    // Also check if the conversation disappeared (if X auto-removed it)
+                    if (!isConversationStillVisible(username)) {
+                        console.log(`XSpamSweeper: Conversation @${username} was auto-removed after report`);
+                        // Try to close any remaining modal
+                        document.body.click();
+                        await delay(300);
+                        return { success: true, message: `report completed for @${username} (auto-removed)` };
+                    }
+                }
+
+                // If we get here but the conversation is gone, still consider it success
+                if (!isConversationStillVisible(username)) {
+                    return { success: true, message: `report completed for @${username}` };
                 }
             }
 
@@ -622,21 +642,50 @@
 
         if (request.action === 'sweepUser') {
             // Sweep = Report + Block + Delete (in that order)
+            // Smart handling: if conversation disappears after report, skip remaining steps
             (async () => {
                 const results = [];
 
                 // 1. Report first
                 const reportResult = await performAction(request.username, 'report');
                 results.push({ action: 'report', ...reportResult });
-                await delay(1500); // Wait for report dialog
 
-                // 2. Then Block
-                const blockResult = await performAction(request.username, 'block');
+                // Check if conversation is already gone after report
+                // (X sometimes auto-removes when you select Block and Mute)
+                if (!isConversationStillVisible(request.username)) {
+                    console.log(`XSpamSweeper: @${request.username} already gone after report, sweep complete`);
+                    results.push({ action: 'block', success: true, message: 'skipped - already removed' });
+                    results.push({ action: 'delete', success: true, message: 'skipped - already removed' });
+                    sendResponse({
+                        success: true,
+                        message: `Swept @${request.username}`,
+                        details: results
+                    });
+                    return;
+                }
+
+                await delay(1000);
+
+                // 2. Then Block (with skipIfGone=true since report might have removed it)
+                const blockResult = await performAction(request.username, 'block', true);
                 results.push({ action: 'block', ...blockResult });
+
+                // Check again if gone after block
+                if (!isConversationStillVisible(request.username)) {
+                    console.log(`XSpamSweeper: @${request.username} gone after block, sweep complete`);
+                    results.push({ action: 'delete', success: true, message: 'skipped - already removed' });
+                    sendResponse({
+                        success: true,
+                        message: `Swept @${request.username}`,
+                        details: results
+                    });
+                    return;
+                }
+
                 await delay(500);
 
-                // 3. Finally Delete
-                const deleteResult = await performAction(request.username, 'delete');
+                // 3. Finally Delete (with skipIfGone=true)
+                const deleteResult = await performAction(request.username, 'delete', true);
                 results.push({ action: 'delete', ...deleteResult });
 
                 const allSuccess = results.every(r => r.success);
@@ -650,91 +699,8 @@
         }
     });
 
-    // If we're in the report iframe, auto-handle spam selection with retry
-    if (isInReportIframe()) {
-        console.log('XSpamSweeper: In report iframe, will auto-select Spam');
-
-        // Click any submit/report/next buttons that appear
-        async function clickSubmitButtons(maxAttempts = 6) {
-            for (let attempt = 0; attempt < maxAttempts; attempt++) {
-                await delay(700);
-
-                console.log(`XSpamSweeper: Looking for submit/next buttons (attempt ${attempt + 1})`);
-
-                // Try specific button texts including "Send report to X" and "Block" for subsequent steps
-                const buttonTexts = ['Next', 'Submit', 'Report', 'Block', 'Done', 'Send report to X'];
-                let clicked = false;
-
-                for (const text of buttonTexts) {
-                    if (clickElementWithText(text, ['BUTTON', 'DIV'])) {
-                        console.log(`XSpamSweeper: Clicked button "${text}"`);
-                        clicked = true;
-                        // DO NOT break here. Click any other matches too? 
-                        // No, for buttons we typically just want one.
-                        break;
-                    }
-                }
-
-                if (clicked) {
-                    await delay(800);
-                    // Should we return? Or keep clicking if multiple steps? 
-                    // Usually one click per step. 
-                    // But this function might be called multiple times.
-                    return true;
-                }
-
-                if (!clicked) {
-                    console.log(`XSpamSweeper: No submit button found on attempt ${attempt + 1}`);
-                }
-            }
-            return false;
-        }
-
-        async function attemptSpamSelection(retries = 20) {
-            console.log("XSpamSweeper: Iframe text content available:", document.body.innerText.substring(0, 100) + "...");
-
-            for (let i = 0; i < retries; i++) {
-                await delay(1000);
-
-                // 1. Try finding "It's spam" (using new smart-quote insensitive matcher)
-                if (clickElementWithText("It's spam")) {
-                    console.log('XSpamSweeper: Clicked "It\'s spam"');
-                    await delay(800);
-                    await clickSubmitButtons();
-                    return true;
-                }
-
-                // 2. ALSO check for Next/Submit buttons directly.
-                // This handles cases where we missed the first step, or user clicked it, 
-                // or we are already on the confirmation page ("Send report to X")
-                if (await clickSubmitButtons(1)) {
-                    console.log('XSpamSweeper: Clicked a submit button in catch-up mode');
-                    return true;
-                }
-
-                console.log(`XSpamSweeper: "It's spam" option not found, retry ${i + 1}/${retries}`);
-
-                // Fallback: try finding just "spam"
-                if (i > 5) {
-                    if (clickElementWithText("spam")) {
-                        console.log('XSpamSweeper: Clicked "spam" (loose match)');
-                        await delay(800);
-                        await clickSubmitButtons();
-                        return true;
-                    }
-                }
-            }
-            console.log('XSpamSweeper: Could not find Spam option after retries');
-            return false;
-        }
-
-        // Wait for DOM to be ready then attempt
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', () => attemptSpamSelection());
-        } else {
-            attemptSpamSelection();
-        }
-    }
+    // NOTE: Report iframe automation is NOT auto-triggered here.
+    // It only runs when explicitly requested via "injectReportHandler" message from background.js
 
     console.log('XSpamSweeper: Content script loaded' + (isInReportIframe() ? ' (in report iframe)' : ''));
 })();
