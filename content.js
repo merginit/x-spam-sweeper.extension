@@ -211,13 +211,28 @@
                 const avatarUrl = avatarImg?.src || '';
 
                 // Get message preview text (with emojis)
-                const messageElement = cell.querySelector('[data-testid="tweetText"]');
+                // First try the standard tweetText element
+                let messageElement = cell.querySelector('[data-testid="tweetText"]');
                 let messagePreview = '';
                 if (messageElement) {
                     const fullText = extractTextWithEmojis(messageElement);
                     messagePreview = fullText.substring(0, 150);
                     if (fullText.length > 150) {
                         messagePreview += '...';
+                    }
+                } else {
+                    // Fallback: look for media indicators like "Sent a photo", "Sent a video", etc.
+                    const spans = cell.querySelectorAll('span');
+                    for (const span of spans) {
+                        const spanText = span.textContent.trim();
+                        if (spanText.match(/^Sent (a |an )?(photo|video|GIF|voice message|sticker)/i) ||
+                            spanText.match(/^(Photo|Video|GIF|Voice message|Sticker)$/i) ||
+                            spanText.match(/^Shared a (post|link|message)/i) ||
+                            spanText.match(/^Liked a message$/i) ||
+                            spanText.match(/^Reacted /i)) {
+                            messagePreview = spanText;
+                            break;
+                        }
                     }
                 }
 

@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.8] - 2025-12-10
+
+### Fixed
+- **Photo/Media Message Display**: Fixed issue where messages containing photos, videos, GIFs, or other media showed blank preview instead of "Sent a photo" text.
+
+### Changed
+- **Enhanced Message Extraction**: Added fallback detection for media message indicators when standard `tweetText` element is not present.
+
+---
+
 ## [0.1.7] - 2025-12-09
 
 ### Added
