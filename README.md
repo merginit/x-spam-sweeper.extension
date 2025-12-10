@@ -12,7 +12,6 @@
 </div>
 
 <br />
-<br />
 
 <div align="center">
     <img src="./assets/preview.png" alt="X Spam Sweeper Preview" />
