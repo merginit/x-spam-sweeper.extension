@@ -574,6 +574,40 @@
     }
 
     /**
+     * Click submit/next/report buttons in the report flow
+     * @param {number} maxAttempts - Maximum attempts to find buttons
+     * @returns {Promise<boolean>}
+     */
+    async function clickSubmitButtons(maxAttempts = 6) {
+        for (let attempt = 0; attempt < maxAttempts; attempt++) {
+            await delay(700);
+
+            console.log(`XSpamSweeper: Looking for submit/next buttons (attempt ${attempt + 1})`);
+
+            const buttonTexts = ['Next', 'Submit', 'Report', 'Block', 'Done', 'Send report to X'];
+            let clicked = false;
+
+            for (const text of buttonTexts) {
+                if (clickElementWithText(text, ['BUTTON', 'DIV'])) {
+                    console.log(`XSpamSweeper: Clicked button "${text}"`);
+                    clicked = true;
+                    break;
+                }
+            }
+
+            if (clicked) {
+                await delay(800);
+                return true;
+            }
+
+            if (!clicked) {
+                console.log(`XSpamSweeper: No submit button found on attempt ${attempt + 1}`);
+            }
+        }
+        return false;
+    }
+
+    /**
      * Handle report iframe - click Spam option
      * This runs inside the report iframe when all_frames is true
      */
