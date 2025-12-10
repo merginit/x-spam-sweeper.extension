@@ -4,12 +4,15 @@
     <img src="./assets/icon.png" alt="icon" width="150" />
 </div>
 
-<div align="center" style="margin-bottom: 4rem;">
+<div align="center">
     <span style="font-size: 2.5rem;">
       <b><strong style="font-size: 5rem;">X Spam Sweeper</strong></b>
       <br>"A lightweight Chrome extension<br>to batch report and block spam accounts in X Messages."
     </span>
 </div>
+
+<br />
+<br />
 
 <div align="center">
     <img src="./assets/preview.png" alt="X Spam Sweeper Preview" />
