@@ -4,14 +4,16 @@
     <img src="./assets/icon.png" alt="icon" width="150" />
 </div>
 
-<div align="center" style="margin-bottom: 2.5rem;">
+<div align="center" style="margin-bottom: 4rem;">
     <span style="font-size: 2.5rem;">
       <b><strong style="font-size: 5rem;">X Spam Sweeper</strong></b>
       <br>"A lightweight Chrome extension<br>to batch report and block spam accounts in X Messages."
     </span>
 </div>
 
-![X Spam Sweeper Preview](./assets/preview.png)
+<div align="center">
+    <img src="./assets/preview.png" alt="X Spam Sweeper Preview" />
+</div>
 
 ## Why X Spam Sweeper?
 
@@ -35,12 +37,6 @@ Tired of manually dealing with dozens of spam message requests on X (Twitter)? X
 4. **Action:** Use the Report or Block buttons to take action (coming soon)
 
 ## Installation
-
-**1. From Chrome Web Store (Coming Soon)**
-
-The extension will be available on the Chrome Web Store once core features are complete.
-
-**2. From Source (Developer)**
 
 1. Clone this repository: `git clone https://github.com/jonasfroeller/x-spam-sweeper.git`
 2. Open Chrome and navigate to `chrome://extensions`
