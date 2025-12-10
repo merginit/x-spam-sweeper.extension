@@ -225,7 +225,7 @@
                     const spans = cell.querySelectorAll('span');
                     for (const span of spans) {
                         const spanText = span.textContent.trim();
-                        if (spanText.match(/^Sent (a |an )?(photo|video|GIF|voice message|sticker)/i) ||
+                        if (spanText.match(/^Sent (a |an )?(photo|video|GIF|voice message|sticker|link)/i) ||
                             spanText.match(/^(Photo|Video|GIF|Voice message|Sticker)$/i) ||
                             spanText.match(/^Shared a (post|link|message)/i) ||
                             spanText.match(/^Liked a message$/i) ||

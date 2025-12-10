@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.11] - 2025-12-10
+
+### Fixed
+- **Link Message Display**: Fixed issue where messages containing links showed blank preview instead of "Sent a link" text.
+
+---
+
 ## [0.1.10] - 2025-12-10
 
 ### Fixed
