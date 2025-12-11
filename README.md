@@ -14,7 +14,8 @@
 <br />
 
 <div align="center">
-    <img src="./assets/preview.png" alt="X Spam Sweeper Preview" />
+    <img src="./assets/preview.png" alt="X Spam Sweeper Preview" width="45%" />
+    <img src="./assets/preview-error.png" alt="X Spam Sweeper Error Preview" width="45%" />
 </div>
 
 ## Why X Spam Sweeper?

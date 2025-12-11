@@ -518,6 +518,12 @@
                     console.log('XSpamSweeper: Iframe found, waiting 1s for load...');
                     await delay(1000);
 
+                    try {
+                        sessionStorage.setItem('xSpamSweeperAutoReport', 'true');
+                    } catch (e) {
+                        console.log('XSpamSweeper: Could not set sessionStorage flag');
+                    }
+
                     // Tell background script to inject automation code into all frames
                     console.log('XSpamSweeper: Requesting background script to inject into iframe');
                     try {
@@ -748,8 +754,67 @@
         }
     });
 
-    // NOTE: Report iframe automation is NOT auto-triggered here.
-    // It only runs when explicitly requested via "injectReportHandler" message from background.js
+    // If we're in the report iframe AND the extension triggered it, auto-handle spam selection
+    if (isInReportIframe()) {
+        // Check if this was triggered by the extension (not a manual user report)
+        let isExtensionTriggered = false;
+        try {
+            isExtensionTriggered = sessionStorage.getItem('xSpamSweeperAutoReport') === 'true';
+            // Clear the flag immediately so it doesn't persist
+            sessionStorage.removeItem('xSpamSweeperAutoReport');
+        } catch (e) {
+            console.log('XSpamSweeper: Could not read sessionStorage flag');
+        }
+
+        if (isExtensionTriggered) {
+            console.log('XSpamSweeper: In report iframe (extension-triggered), will auto-select Spam');
+
+            async function attemptSpamSelection(retries = 20) {
+                console.log("XSpamSweeper: Iframe text content available:", document.body.innerText.substring(0, 100) + "...");
+
+                for (let i = 0; i < retries; i++) {
+                    await delay(1000);
+
+                    // 1. Try finding "It's spam"
+                    if (clickElementWithText("It's spam")) {
+                        console.log('XSpamSweeper: Clicked "It\'s spam"');
+                        await delay(800);
+                        await clickSubmitButtons();
+                        return true;
+                    }
+
+                    // 2. ALSO check for Next/Submit buttons directly
+                    if (await clickSubmitButtons(1)) {
+                        console.log('XSpamSweeper: Clicked a submit button in catch-up mode');
+                        return true;
+                    }
+
+                    console.log(`XSpamSweeper: "It's spam" option not found, retry ${i + 1}/${retries}`);
+
+                    // Fallback: try finding just "spam" after some retries
+                    if (i > 5) {
+                        if (clickElementWithText("spam")) {
+                            console.log('XSpamSweeper: Clicked "spam" (loose match)');
+                            await delay(800);
+                            await clickSubmitButtons();
+                            return true;
+                        }
+                    }
+                }
+                console.log('XSpamSweeper: Could not find Spam option after retries');
+                return false;
+            }
+
+            // Wait for DOM to be ready then attempt
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', () => attemptSpamSelection());
+            } else {
+                attemptSpamSelection();
+            }
+        } else {
+            console.log('XSpamSweeper: In report iframe (manual), NOT auto-selecting');
+        }
+    }
 
     console.log('XSpamSweeper: Content script loaded' + (isInReportIframe() ? ' (in report iframe)' : ''));
 })();

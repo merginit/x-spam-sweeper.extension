@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.12] - 2025-12-10
+
+### Fixed
+- **Report Automation with Flag Check**: Restored auto-trigger code with `sessionStorage` flag check. Extension sets `xSpamSweeperAutoReport` flag before triggering report; iframe automation only runs if this flag is present. Manual user reports no longer trigger automation.
+
 ## [0.1.11] - 2025-12-10
 
 ### Fixed
