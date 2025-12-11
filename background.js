@@ -50,8 +50,16 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 });
 
 /**
- * This function is injected into all frames to handle report automation
- * It runs in the context of the page, not the extension
+ * This function is injected into all frames to handle report automation.
+ * It runs in the context of the page, not the extension.
+ * 
+ * NOTE: This function contains duplicated utility code (nativeClick, clickElementWithText, etc.)
+ * that also exists in shared.js. This duplication is INTENTIONAL and UNAVOIDABLE because:
+ * 1. chrome.scripting.executeScript() serializes this function to a string
+ * 2. The serialized function runs in the target page's isolated context
+ * 3. It has NO access to extension files like shared.js
+ * 
+ * Do not attempt to refactor this to use shared.js - it will break the injection.
  */
 function handleReportIframeAutomation() {
     // Only run in the report iframe

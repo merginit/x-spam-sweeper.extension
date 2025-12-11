@@ -181,15 +181,6 @@ function createRequestItem(request) {
 }
 
 /**
- * Escape HTML to prevent XSS
- */
-function escapeHtml(text) {
-    const div = document.createElement('div');
-    div.textContent = text || '';
-    return div.innerHTML;
-}
-
-/**
  * Render the requests list
  */
 function renderRequestsList() {

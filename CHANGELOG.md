@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.13] - 2025-12-11
+
+### Changed
+- **Code Refactoring**: Moved shared utility functions to `shared.js` to reduce code duplication across the extension.
+  - Moved `escapeHtml`, `nativeClick`, `delay`, `clickElementWithText`, `clickSubmitButtons`, `waitForElement`, `waitForElementToDisappear`, and `extractTextWithEmojis` to shared module.
+  - Updated `popup.js` and `content.js` to use shared utilities.
+  - Added `shared.js` to content scripts in manifest for proper loading order.
+
+---
+
 ## [0.1.12] - 2025-12-10
 
 ### Fixed
