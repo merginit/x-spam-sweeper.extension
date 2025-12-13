@@ -249,36 +249,38 @@ function isUrlSafe(url) {
 /**
  * Check text against URL patterns
  * @param {string} text - Text to analyze
- * @returns {{isSpam: boolean, riskLevel: string, matchedPatterns: string[]}}
+ * @returns {{isSpam: boolean, riskLevel: string, matchedPatterns: string[], hasSafeUrl: boolean}}
  */
 function checkUrlPatterns(text) {
-    if (!text) return { isSpam: false, riskLevel: RISK_LEVELS.SAFE, matchedPatterns: [] };
+    if (!text) return { isSpam: false, riskLevel: RISK_LEVELS.SAFE, matchedPatterns: [], hasSafeUrl: false };
 
     const lowerText = text.toLowerCase();
     const matchedPatterns = [];
 
-    // Check for safe domains first - if found, reduce suspicion
+    // Check for safe domains first
     const hasSafeUrl = SAFE_DOMAINS.some(domain => lowerText.includes(domain));
 
-    // Check high-risk patterns
+    // Check high-risk patterns (Instant Red Flag)
     for (const pattern of HIGH_RISK_URL_PATTERNS) {
         if (pattern.test(text)) {
             matchedPatterns.push(pattern.toString());
         }
     }
 
-    // Check custom URL patterns (from options page)
+    // Check custom URL patterns
     for (const customPattern of customUrlPatterns) {
         if (lowerText.includes(customPattern.toLowerCase())) {
             matchedPatterns.push(`custom:${customPattern}`);
         }
     }
 
+    // If High Risk or Custom match found -> HIGH
     if (matchedPatterns.length > 0) {
         return {
             isSpam: true,
             riskLevel: RISK_LEVELS.HIGH,
-            matchedPatterns
+            matchedPatterns,
+            hasSafeUrl
         };
     }
 
@@ -290,17 +292,21 @@ function checkUrlPatterns(text) {
     }
 
     if (matchedPatterns.length > 0) {
+        // If we found a Medium pattern (like bit.ly) BUT also a Safe pattern (youtube),
+        // we lean towards Low risk, but still flag it because redirects are suspicious.
         return {
             isSpam: true,
             riskLevel: hasSafeUrl ? RISK_LEVELS.LOW : RISK_LEVELS.MEDIUM,
-            matchedPatterns
+            matchedPatterns,
+            hasSafeUrl
         };
     }
 
     return {
         isSpam: false,
         riskLevel: RISK_LEVELS.SAFE,
-        matchedPatterns: []
+        matchedPatterns: [],
+        hasSafeUrl
     };
 }
 
@@ -353,37 +359,60 @@ function calculateSpamScore(text) {
 
 /**
  * Get overall spam risk level for a message
- * Combines URL patterns and keyword scoring
+ * Combines URL patterns and keyword scoring with 0-30 calibration
  * @param {string} text - Message text to analyze
  * @returns {{riskLevel: string, score: number, urlMatch: Object, keywordMatch: Object, isHiddenLink: boolean}}
  */
 function getSpamInfo(text) {
-    // Check for "Sent a link" placeholder (hidden link)
+    // 1. Detect "Sent a link" placeholder
+    // This is a blind spot. We assign it a base SUS score.
     const isHiddenLink = text && /^sent a link$/i.test(text.trim());
 
-    // Check URL patterns
+    // 2. Analyze URLs
     const urlMatch = checkUrlPatterns(text);
 
-    // Calculate keyword score
+    // 3. Analyze Keywords
     const keywordMatch = calculateSpamScore(text);
 
-    // Add score bonus for URL pattern matches
     let totalScore = keywordMatch.score;
-    if (urlMatch.riskLevel === RISK_LEVELS.HIGH) {
-        totalScore += 15; // High-risk URL = 15 points
-    } else if (urlMatch.riskLevel === RISK_LEVELS.MEDIUM) {
-        totalScore += 8;  // Medium-risk URL = 8 points
+
+    // --- SCORING CALIBRATION (0 to 30) ---
+
+    if (isHiddenLink) {
+        // Base score for hidden links. 
+        // Logic: We don't know what it is, so it's SUS (10) by default.
+        // If the background worker resolves it later, this re-runs with the real URL.
+        totalScore += 10;
     }
 
-    // Determine overall risk level
+    // High Risk URL (WhatsApp, Telegram, etc.) -> Instant +20
+    if (urlMatch.riskLevel === RISK_LEVELS.HIGH) {
+        totalScore += 20;
+    }
+
+    // Medium Risk URL (Shorteners, Discord) -> +10
+    else if (urlMatch.riskLevel === RISK_LEVELS.MEDIUM) {
+        totalScore += 10;
+    }
+
+    // Safe Domain Bonus (The "Friend" Safety Valve)
+    // If it's YouTube/Spotify/GitHub, we subtract points.
+    if (urlMatch.hasSafeUrl) {
+        totalScore -= 10;
+    }
+
+    // Clamp score between 0 and 30
+    totalScore = Math.min(Math.max(totalScore, 0), 30);
+
+    // --- RISK LEVEL ASSIGNMENT ---
     let riskLevel = RISK_LEVELS.SAFE;
 
-    if (urlMatch.riskLevel === RISK_LEVELS.HIGH) {
-        riskLevel = RISK_LEVELS.HIGH;
-    } else if (urlMatch.riskLevel === RISK_LEVELS.MEDIUM || totalScore >= 10) {
-        riskLevel = RISK_LEVELS.MEDIUM;
-    } else if (totalScore >= 3 || isHiddenLink) {  // 3 = 10% of max (30)
-        riskLevel = RISK_LEVELS.LOW;
+    if (totalScore >= 20) {
+        riskLevel = RISK_LEVELS.HIGH;   // Red Badge (Definite Spam)
+    } else if (totalScore >= 10) {
+        riskLevel = RISK_LEVELS.MEDIUM; // Yellow Badge (SUS / Hidden Link)
+    } else if (totalScore >= 3) {
+        riskLevel = RISK_LEVELS.LOW;    // Grey Badge (Has link / Salesy)
     }
 
     return {

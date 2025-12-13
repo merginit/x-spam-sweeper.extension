@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.7] - 2025-12-14
+
+### Improved
+- **Spam Score Calibration (0–30 Scale)**: Redesigned scoring system with consistent 0–30 point scale and clear risk thresholds (≥20 = HIGH, ≥10 = MEDIUM, ≥3 = LOW).
+- **Hidden Link Detection**: "Sent a link" messages now receive +10 base score (MEDIUM risk) until the background worker resolves the actual URL.
+- **Safe Domain Negative Scoring**: Links to YouTube, Spotify, GitHub, etc. now subtract 10 points, preventing false positives when new friends share legitimate content.
+- **High-Risk URL Scoring**: Bumped from +15 to +20 points for WhatsApp/Telegram/OnlyFans links. Medium-risk URLs bumped from +8 to +10.
+- **Score Clamping**: Scores are now clamped between 0 and 30 to ensure consistent UI behavior.
+
+---
+
 ## [0.2.6] - 2025-12-14
 
 ### Security
