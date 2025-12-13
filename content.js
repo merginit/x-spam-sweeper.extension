@@ -569,4 +569,74 @@
     }
 
     console.log('XSpamSweeper: Content script loaded' + (isInReportIframe() ? ' (in report iframe)' : ''));
+
+    /**
+     * Set up MutationObserver to detect new DM rows when scrolling
+     * This ensures spam indicators are applied to newly loaded conversations
+     */
+    function setupDOMObserver() {
+        if (isInReportIframe()) return;
+        if (!isOnMessageRequestsPage()) return;
+
+        let debounceTimer = null;
+        let lastProcessedCount = 0;
+
+        const observer = new MutationObserver((mutations) => {
+            if (!isOnMessageRequestsPage()) return;
+
+            const hasNewNodes = mutations.some(m => m.addedNodes.length > 0);
+            if (!hasNewNodes) return;
+
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(() => {
+                const currentCount = document.querySelectorAll('div[data-testid="cellInnerDiv"]').length;
+
+                if (currentCount !== lastProcessedCount) {
+                    lastProcessedCount = currentCount;
+                    console.log(`XSpamSweeper: DOM changed, ${currentCount} rows detected`);
+
+                    try {
+                        chrome.runtime.sendMessage({ action: 'domUpdated', count: currentCount });
+                    } catch (e) {
+                        // Popup not open, ignore
+                    }
+                }
+            }, 300);
+        });
+
+        const targetNode = document.querySelector('[data-testid="primaryColumn"]') || document.body;
+        observer.observe(targetNode, {
+            childList: true,
+            subtree: true
+        });
+
+        console.log('XSpamSweeper: MutationObserver active for DM list');
+        return observer;
+    }
+
+    /**
+     * Handle URL changes (SPA navigation)
+     * X changes URLs without page reload
+     */
+    let lastUrl = window.location.href;
+    function setupURLObserver() {
+        // Check URL periodically (pushState doesn't trigger events reliably)
+        setInterval(() => {
+            if (window.location.href !== lastUrl) {
+                lastUrl = window.location.href;
+                console.log('XSpamSweeper: URL changed to', lastUrl);
+
+                // Re-setup observer if navigated to requests page
+                if (isOnMessageRequestsPage()) {
+                    setupDOMObserver();
+                }
+            }
+        }, 1000);
+    }
+
+    // Initialize observers on the main page (not in iframes)
+    if (!isInReportIframe()) {
+        setupDOMObserver();
+        setupURLObserver();
+    }
 })();

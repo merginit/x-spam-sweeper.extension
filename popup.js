@@ -542,10 +542,23 @@ async function loadFilterPreference() {
     }
 }
 
-// Filter toggle button
 filterToggleBtn?.addEventListener('click', toggleFilter);
 
-// Initialize on DOM ready
+// Listen for DOM updates from content script (scrolling, navigation)
+chrome.runtime.onMessage.addListener((request, _sender, _sendResponse) => {
+    if (request.action === 'domUpdated') {
+        console.log('XSpamSweeper Popup: DOM updated, refreshing list');
+        // Debounce refresh to avoid rapid re-fetches
+        if (!window._refreshPending) {
+            window._refreshPending = true;
+            setTimeout(async () => {
+                await fetchMessageRequests();
+                window._refreshPending = false;
+            }, 500);
+        }
+    }
+});
+
 document.addEventListener('DOMContentLoaded', async () => {
     await loadFilterPreference();
     await fetchMessageRequests();

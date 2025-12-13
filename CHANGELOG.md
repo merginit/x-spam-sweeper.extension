@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.1] - 2025-12-13
+
+### Added
+- **SPA Navigation Support**:
+  - MutationObserver detects new DM rows when scrolling.
+  - URL change detection for SPA navigation.
+  - Popup auto-refreshes when content changes.
+
+---
+
 ## [0.2.0] - 2025-12-13
 
 ### Added
