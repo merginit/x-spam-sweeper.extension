@@ -438,134 +438,184 @@ function waitForTabLoad(tabId) {
  */
 function extractLinksFromProfile() {
     return new Promise((resolve) => {
-        // Find the Message button - try multiple selectors for both UIs
-        const msgBtn = document.querySelector('[data-testid="sendDMFromProfile"]') ||
-            document.querySelector('[aria-label="Message"]') ||
-            document.querySelector('button[aria-label*="Message"]') ||
-            document.querySelector('button svg[data-icon*="message"]')?.closest('button');
-
-        if (!msgBtn) {
-            console.log('XSpamSweeper: Message button not found on profile');
-            resolve({ links: [], error: 'Message button not found' });
-            return;
+        // Native click helper for React compatibility
+        function nativeClick(element) {
+            if (!element) return false;
+            element.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true, view: window }));
+            element.dispatchEvent(new MouseEvent('mouseup', { bubbles: true, cancelable: true, view: window }));
+            element.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, view: window }));
+            element.click();
+            return true;
         }
 
-        console.log('XSpamSweeper: Found message button, clicking...');
-        msgBtn.click();
+        // First check for sensitive content warning and click through it
+        const sensitiveButton = document.querySelector('[data-testid="empty_state_button_text"]') ||
+            document.querySelector('button[data-testid*="empty_state"]');
 
-        let attempts = 0;
-        const maxAttempts = 20; // 10 seconds total
+        if (sensitiveButton) {
+            console.log('XSpamSweeper: Found sensitive content warning, clicking through...');
+            nativeClick(sensitiveButton);
+            // Wait a bit for the page to update
+            setTimeout(() => continueWithMessageButton(), 1500);
+        } else {
+            continueWithMessageButton();
+        }
 
-        const checkForMessages = setInterval(() => {
-            attempts++;
+        function continueWithMessageButton() {
+            // Find the Message button - try multiple selectors for both UIs
+            const msgBtn = document.querySelector('[data-testid="sendDMFromProfile"]') ||
+                document.querySelector('[aria-label="Message"]') ||
+                document.querySelector('button[aria-label*="Message"]') ||
+                document.querySelector('button svg[data-icon*="message"]')?.closest('button');
 
-            // Try multiple container selectors - handles BOTH old and new X UIs
-            const containers = [
-                // Old UI selectors
-                document.querySelector('[data-testid="DMDrawer"]'),
-                document.querySelector('[data-testid="DmScrollerContainer"]'),
-                document.querySelector('[data-testid="DMCompositeMessage"]'),
-                document.querySelector('[data-testid="messageEntry"]')?.closest('[role="dialog"]'),
-                document.querySelector('[data-testid="cellInnerDiv"]')?.closest('[class*="r-"]'),
-                // Fallback: look for any area with message entries
-                document.querySelector('[data-testid="messageEntry"]')?.parentElement?.parentElement?.parentElement,
-                // New UI selectors (Tailwind-based)
-                document.querySelector('li[style*="position: absolute"]'),
-                document.querySelector('[data-testid*="message-text"]'),
-                document.querySelector('.font-chirp'),
-                // Any visible dialog/drawer
-                document.querySelector('[role="dialog"]'),
-                document.querySelector('[class*="drawer"]'),
-                document.querySelector('[class*="modal"]')
-            ].filter(Boolean)[0];
+            if (!msgBtn) {
+                console.log('XSpamSweeper: Message button not found on profile');
+                resolve({ links: [], error: 'Message button not found' });
+                return;
+            }
 
-            // Also check if we can find any URLs on the page (either UI)
-            const hasContent = containers ||
-                document.querySelector('[data-testid*="message"]') ||
-                document.body.textContent.match(/https?:\/\/[^\s]+/);
+            console.log('XSpamSweeper: Found message button, clicking...');
+            msgBtn.click();
 
-            console.log(`XSpamSweeper: Attempt ${attempts}/${maxAttempts}, container: ${!!containers}, hasContent: ${!!hasContent}`);
+            let attempts = 0;
+            const maxAttempts = 20; // 10 seconds total
 
-            if (hasContent || attempts >= maxAttempts) {
-                clearInterval(checkForMessages);
+            const checkForMessages = setInterval(() => {
+                attempts++;
 
-                const links = [];
-                const searchArea = document.body; // Search entire body for robustness
+                // Try multiple container selectors - handles BOTH old and new X UIs
+                const containers = [
+                    // Old UI selectors
+                    document.querySelector('[data-testid="DMDrawer"]'),
+                    document.querySelector('[data-testid="DmScrollerContainer"]'),
+                    document.querySelector('[data-testid="DMCompositeMessage"]'),
+                    document.querySelector('[data-testid="messageEntry"]')?.closest('[role="dialog"]'),
+                    document.querySelector('[data-testid="cellInnerDiv"]')?.closest('[class*="r-"]'),
+                    // Fallback: look for any area with message entries
+                    document.querySelector('[data-testid="messageEntry"]')?.parentElement?.parentElement?.parentElement,
+                    // New UI selectors (Tailwind-based)
+                    document.querySelector('li[style*="position: absolute"]'),
+                    document.querySelector('[data-testid*="message-text"]'),
+                    document.querySelector('.font-chirp'),
+                    // Any visible dialog/drawer
+                    document.querySelector('[role="dialog"]'),
+                    document.querySelector('[class*="drawer"]'),
+                    document.querySelector('[class*="modal"]')
+                ].filter(Boolean)[0];
 
-                // Look for link cards (link previews with thumbnails) - OLD UI
-                const cardLinks = searchArea.querySelectorAll('[data-testid="card.wrapper"] a[href]');
-                console.log(`XSpamSweeper: Found ${cardLinks.length} card links`);
-                cardLinks.forEach(a => {
-                    const href = a.href;
-                    if (href && !href.includes('x.com') && !href.includes('twitter.com')) {
-                        links.push(href);
-                    }
-                });
+                // Also check if we can find any URLs on the page (either UI)
+                const hasContent = containers ||
+                    document.querySelector('[data-testid*="message"]') ||
+                    document.body.textContent.match(/https?:\/\/[^\s]+/);
 
-                // Look for any external links in message entries - OLD UI
-                const messageEntries = searchArea.querySelectorAll('[data-testid="messageEntry"]');
-                console.log(`XSpamSweeper: Found ${messageEntries.length} message entries (old UI)`);
-                messageEntries.forEach(entry => {
-                    const entryLinks = entry.querySelectorAll('a[href]');
-                    entryLinks.forEach(a => {
+                console.log(`XSpamSweeper: Attempt ${attempts}/${maxAttempts}, container: ${!!containers}, hasContent: ${!!hasContent}`);
+
+                if (hasContent || attempts >= maxAttempts) {
+                    clearInterval(checkForMessages);
+
+                    const links = [];
+                    const searchArea = document.body; // Search entire body for robustness
+
+                    // Look for link cards (link previews with thumbnails) - OLD UI
+                    const cardLinks = searchArea.querySelectorAll('[data-testid="card.wrapper"] a[href]');
+                    console.log(`XSpamSweeper: Found ${cardLinks.length} card links`);
+                    cardLinks.forEach(a => {
+                        const href = a.href;
+                        if (href && !href.includes('x.com') && !href.includes('twitter.com')) {
+                            links.push(href);
+                        }
+                        // OLD UI: Extract domain from card description text (e.g., "onlyfans.com")
+                        const cardDetail = a.querySelector('[data-testid="card.layoutSmall.detail"]');
+                        if (cardDetail) {
+                            const domainText = cardDetail.querySelector('div[dir="auto"]')?.textContent?.trim();
+                            if (domainText && domainText.match(/^[a-z0-9.-]+\.[a-z]{2,}$/i)) {
+                                const domainUrl = 'https://' + domainText;
+                                if (!links.includes(domainUrl)) {
+                                    links.push(domainUrl);
+                                    console.log(`XSpamSweeper: Extracted domain from card: ${domainUrl}`);
+                                }
+                            }
+                        }
+                    });
+
+                    // Look for any external links in message entries - OLD UI
+                    const messageEntries = searchArea.querySelectorAll('[data-testid="messageEntry"]');
+                    console.log(`XSpamSweeper: Found ${messageEntries.length} message entries (old UI)`);
+                    messageEntries.forEach(entry => {
+                        const entryLinks = entry.querySelectorAll('a[href]');
+                        entryLinks.forEach(a => {
+                            const href = a.href;
+                            if (href &&
+                                !href.includes('x.com') &&
+                                !href.includes('twitter.com') &&
+                                !href.startsWith('javascript:') &&
+                                !links.includes(href)) {
+                                links.push(href);
+                            }
+                        });
+                    });
+
+                    // Check for t.co links (Twitter's shortener) anywhere
+                    const tcoLinks = document.querySelectorAll('a[href*="t.co"]');
+                    console.log(`XSpamSweeper: Found ${tcoLinks.length} t.co links`);
+                    tcoLinks.forEach(a => {
+                        if (!links.includes(a.href)) {
+                            links.push(a.href);
+                        }
+                    });
+
+                    // NEW UI: Extract URLs from .font-chirp elements (Tailwind-based UI)
+                    const fontChirpElements = searchArea.querySelectorAll('.font-chirp');
+                    console.log(`XSpamSweeper: Found ${fontChirpElements.length} font-chirp elements`);
+                    fontChirpElements.forEach(el => {
+                        const text = el.textContent?.trim() || '';
+                        if (text.match(/^https?:\/\//i)) {
+                            if (!text.includes('x.com') && !text.includes('twitter.com') && !links.includes(text)) {
+                                links.push(text);
+                                console.log(`XSpamSweeper: Extracted URL from font-chirp: ${text}`);
+                            }
+                        }
+                    });
+
+                    // NEW UI: Extract URLs from plain text (Tailwind-based UI shows URLs as text)
+                    const urlRegex = /https?:\/\/[^\s<>"']+/gi;
+                    const pageText = searchArea.textContent || '';
+                    const textUrls = pageText.match(urlRegex) || [];
+                    console.log(`XSpamSweeper: Found ${textUrls.length} URLs in page text`);
+                    textUrls.forEach(url => {
+                        // Filter out X/Twitter URLs
+                        if (!url.includes('x.com') &&
+                            !url.includes('twitter.com') &&
+                            !links.includes(url)) {
+                            links.push(url);
+                        }
+                    });
+
+                    // Also look for ALL anchor tags with external hrefs
+                    const allLinks = document.querySelectorAll('a[href]');
+                    console.log(`XSpamSweeper: Checking ${allLinks.length} total links on page`);
+                    allLinks.forEach(a => {
                         const href = a.href;
                         if (href &&
                             !href.includes('x.com') &&
                             !href.includes('twitter.com') &&
                             !href.startsWith('javascript:') &&
+                            !href.startsWith('about:') &&
                             !links.includes(href)) {
                             links.push(href);
                         }
                     });
-                });
 
-                // Check for t.co links (Twitter's shortener) anywhere
-                const tcoLinks = document.querySelectorAll('a[href*="t.co"]');
-                console.log(`XSpamSweeper: Found ${tcoLinks.length} t.co links`);
-                tcoLinks.forEach(a => {
-                    if (!links.includes(a.href)) {
-                        links.push(a.href);
-                    }
-                });
+                    console.log(`XSpamSweeper: Total ${links.length} unique links extracted after ${attempts} attempts`);
 
-                // NEW UI: Extract URLs from plain text (Tailwind-based UI shows URLs as text)
-                const urlRegex = /https?:\/\/[^\s<>"']+/gi;
-                const pageText = searchArea.textContent || '';
-                const textUrls = pageText.match(urlRegex) || [];
-                console.log(`XSpamSweeper: Found ${textUrls.length} URLs in page text`);
-                textUrls.forEach(url => {
-                    // Filter out X/Twitter URLs
-                    if (!url.includes('x.com') &&
-                        !url.includes('twitter.com') &&
-                        !links.includes(url)) {
-                        links.push(url);
-                    }
-                });
-
-                // Also look for ALL anchor tags with external hrefs
-                const allLinks = document.querySelectorAll('a[href]');
-                console.log(`XSpamSweeper: Checking ${allLinks.length} total links on page`);
-                allLinks.forEach(a => {
-                    const href = a.href;
-                    if (href &&
-                        !href.includes('x.com') &&
-                        !href.includes('twitter.com') &&
-                        !href.startsWith('javascript:') &&
-                        !href.startsWith('about:') &&
-                        !links.includes(href)) {
-                        links.push(href);
-                    }
-                });
-
-                console.log(`XSpamSweeper: Total ${links.length} unique links extracted after ${attempts} attempts`);
-
-                resolve({
-                    links: [...new Set(links)],
-                    messageCount: messageEntries.length || document.querySelectorAll('li[style*="position"]').length,
-                    containerFound: !!containers,
-                    attempts
-                });
-            }
-        }, 500);
-    });
+                    resolve({
+                        links: [...new Set(links)],
+                        messageCount: messageEntries.length || document.querySelectorAll('li[style*="position"]').length,
+                        containerFound: !!containers,
+                        attempts
+                    });
+                }
+            }, 500);
+        } // End of continueWithMessageButton
+    }); // End of Promise
 }

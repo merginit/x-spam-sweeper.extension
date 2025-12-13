@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.4] - 2025-12-13
+
+### Fixed
+- **Sensitive Content Profiles**: Auto-click "Yes, view profile" for accounts flagged by X
+- **Link Extraction**: Extract actual domains from link card descriptions (OLD UI) and `.font-chirp` URLs (NEW UI)
+
+---
+
 ## [0.2.3] - 2025-12-13
 
 ### Added
