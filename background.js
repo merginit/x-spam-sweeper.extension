@@ -401,22 +401,45 @@ async function processLinkResolutionQueue() {
                 const result = await resolveUserLink(workerTabId, username);
                 console.log(`XSpamSweeper Background: Resolved @${username}:`, result);
 
-                // Resolve t.co shortlinks to actual URLs using tab navigation
+                // Resolve t.co shortlinks to actual URLs using webRequest (safe - doesn't load destination)
                 if (result.links && result.links.length > 0) {
                     const resolvedLinks = [];
                     for (const link of result.links) {
                         if (link.includes('t.co/')) {
                             try {
-                                // Navigate to t.co link and get final URL
-                                await chrome.tabs.update(workerTabId, { url: link });
-                                await new Promise(r => setTimeout(r, 2000)); // Wait for redirect
-                                const tab = await chrome.tabs.get(workerTabId);
-                                const finalUrl = tab.url;
-                                if (finalUrl && !finalUrl.includes('t.co/')) {
-                                    console.log(`XSpamSweeper Background: Resolved ${link} -> ${finalUrl}`);
-                                    resolvedLinks.push(finalUrl);
+                                // Use webRequest to capture redirect WITHOUT loading destination page
+                                const resolvedUrl = await new Promise((resolve) => {
+                                    let redirectUrl = null;
+
+                                    // Listen for the redirect
+                                    const listener = (details) => {
+                                        if (details.tabId === workerTabId && details.redirectUrl) {
+                                            redirectUrl = details.redirectUrl;
+                                            // Cancel the request to prevent loading destination
+                                            chrome.tabs.update(workerTabId, { url: 'about:blank' }).catch(() => { });
+                                        }
+                                    };
+
+                                    chrome.webRequest.onBeforeRedirect.addListener(
+                                        listener,
+                                        { urls: ['*://t.co/*'], tabId: workerTabId }
+                                    );
+
+                                    // Navigate to t.co link
+                                    chrome.tabs.update(workerTabId, { url: link });
+
+                                    // Wait for redirect or timeout
+                                    setTimeout(() => {
+                                        chrome.webRequest.onBeforeRedirect.removeListener(listener);
+                                        resolve(redirectUrl || link);
+                                    }, 3000);
+                                });
+
+                                if (resolvedUrl && !resolvedUrl.includes('t.co/')) {
+                                    console.log(`XSpamSweeper Background: Resolved ${link} -> ${resolvedUrl}`);
+                                    resolvedLinks.push(resolvedUrl);
                                 } else {
-                                    resolvedLinks.push(link); // Keep original if resolution failed
+                                    resolvedLinks.push(link);
                                 }
                             } catch (e) {
                                 console.warn(`XSpamSweeper Background: Failed to resolve ${link}:`, e.message);

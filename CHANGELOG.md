@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.6] - 2025-12-14
+
+### Security
+- **Safe t.co Resolution**: Replaced unsafe tab navigation with `webRequest.onBeforeRedirect` to capture redirect URLs without loading potentially malicious destination pages. The destination site's JavaScript never executes.
+
+---
+
 ## [0.2.5] - 2025-12-13
 
 ### Fixed
@@ -9,6 +16,9 @@ All notable changes to this project will be documented in this file.
 - **t.co Shortlink Resolution**: Resolves t.co shortlinks by navigating to them and capturing the final URL after redirect. This properly identifies the actual spam domains.
 - **Current User Domain Filtering**: Extracts domains from the logged-in user's bio and website, then filters out any links matching those domains from spam detection results.
 - **Link Deduplication**: Removes duplicate URLs after t.co resolution (e.g., when both t.co link and domain text resolve to same URL).
+
+### Added
+- **Link Aggregator Detection**: Added `allmylinks.com`, `getmysocial.com`, `beacons.ai`, `solo.to`, and `linktr.ee` to MEDIUM_RISK URL patterns (suspicious).
 
 ---
 
