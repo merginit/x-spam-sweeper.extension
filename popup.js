@@ -669,6 +669,10 @@ chrome.runtime.onMessage.addListener((request, _sender, _sendResponse) => {
 });
 
 document.addEventListener('DOMContentLoaded', async () => {
+    // Load custom spam patterns from options page
+    if (typeof initCustomPatterns === 'function') {
+        await initCustomPatterns();
+    }
     await loadFilterPreference();
     await fetchMessageRequests();
 });

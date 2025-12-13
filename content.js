@@ -114,6 +114,7 @@
                     }
                 }
 
+                console.log(`XSpamSweeper: Analyzing message from @${username}: "${messagePreview}"`);
                 const spamInfo = _getSpamInfo(messagePreview);
 
                 requests.push({
@@ -417,13 +418,21 @@
                 return true;
             }
 
-            const requests = extractMessageRequests();
-            sendResponse({
-                success: true,
-                data: requests,
-                count: requests.length
-            });
-            return true;
+            // Ensure custom patterns are loaded before extracting
+            (async () => {
+                if (typeof initCustomPatterns === 'function') {
+                    await initCustomPatterns();
+                    console.log('XSpamSweeper Content: Custom keywords in content script:',
+                        typeof customKeywords !== 'undefined' ? customKeywords : 'undefined');
+                }
+                const requests = extractMessageRequests();
+                sendResponse({
+                    success: true,
+                    data: requests,
+                    count: requests.length
+                });
+            })();
+            return true; // Keep channel open for async response
         }
 
         if (request.action === 'ping') {

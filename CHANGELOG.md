@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.3] - 2025-12-13
+
+### Added
+- **Options Page**:
+  - Custom high-risk URL patterns management
+  - Custom keyword weights configuration
+  - Settings saved to chrome.storage.sync
+  - Dark theme UI matching popup design
+
+---
+
 ## [0.2.2] - 2025-12-13
 
 ### Added

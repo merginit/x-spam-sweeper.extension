@@ -15,3 +15,243 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
+
+:root {
+    --bg-primary: #000000;
+    --bg-secondary: #16181c;
+    --bg-tertiary: #202327;
+    --text-primary: #e7e9ea;
+    --text-secondary: #71767b;
+    --accent: #1d9bf0;
+    --accent-hover: #1a8cd8;
+    --danger: #f4212e;
+    --danger-hover: #dc1e28;
+    --success: #00ba7c;
+    --border: #2f3336;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    min-height: 100vh;
+    padding: 20px;
+}
+
+.container {
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+header {
+    margin-bottom: 32px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+}
+
+header h1 {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 24px;
+    font-weight: 700;
+}
+
+header .logo {
+    width: 28px;
+    height: 28px;
+}
+
+.settings-section {
+    background: var(--bg-secondary);
+    border-radius: 16px;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.settings-section h2 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+.settings-section h2 svg {
+    width: 20px;
+    height: 20px;
+    color: var(--accent);
+}
+
+.section-desc {
+    color: var(--text-secondary);
+    font-size: 14px;
+    margin-bottom: 16px;
+}
+
+/* Pattern/Keyword Lists */
+.patterns-list,
+.keywords-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.pattern-item,
+.keyword-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--bg-tertiary);
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-size: 14px;
+}
+
+.pattern-item.builtin,
+.keyword-item.builtin {
+    opacity: 0.7;
+}
+
+.pattern-item .pattern-text,
+.keyword-item .keyword-text {
+    flex: 1;
+    font-family: monospace;
+}
+
+.keyword-item .keyword-weight {
+    background: var(--accent);
+    color: white;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 600;
+    margin-left: 8px;
+}
+
+.pattern-item .remove-btn,
+.keyword-item .remove-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    transition: all 0.15s;
+}
+
+.pattern-item .remove-btn:hover,
+.keyword-item .remove-btn:hover {
+    background: var(--danger);
+    color: white;
+}
+
+.pattern-item.builtin .remove-btn,
+.keyword-item.builtin .remove-btn {
+    display: none;
+}
+
+/* Add Form */
+.add-form {
+    display: flex;
+    gap: 8px;
+}
+
+.add-form input[type="text"] {
+    flex: 1;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 14px;
+    color: var(--text-primary);
+    font-size: 14px;
+}
+
+.add-form input[type="text"]:focus {
+    outline: none;
+    border-color: var(--accent);
+}
+
+.add-form input[type="number"] {
+    width: 60px;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px;
+    color: var(--text-primary);
+    font-size: 14px;
+    text-align: center;
+}
+
+.add-form input[type="number"]:focus {
+    outline: none;
+    border-color: var(--accent);
+}
+
+/* Buttons */
+.btn {
+    padding: 10px 16px;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.btn-primary {
+    background: var(--accent);
+    color: white;
+}
+
+.btn-primary:hover {
+    background: var(--accent-hover);
+}
+
+.btn-danger {
+    background: transparent;
+    border: 1px solid var(--danger);
+    color: var(--danger);
+}
+
+.btn-danger:hover {
+    background: var(--danger);
+    color: white;
+}
+
+/* Actions Section */
+.actions-section {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 0;
+}
+
+.save-status {
+    color: var(--success);
+    font-size: 14px;
+}
+
+/* Footer */
+footer {
+    text-align: center;
+    padding-top: 20px;
+    color: var(--text-secondary);
+    font-size: 12px;
+}
+
+/* Empty State */
+.empty-state {
+    text-align: center;
+    padding: 20px;
+    color: var(--text-secondary);
+    font-style: italic;
+}

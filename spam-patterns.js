@@ -17,6 +17,39 @@
  */
 
 // =============================================================================
+// CUSTOM PATTERNS FROM OPTIONS PAGE
+// =============================================================================
+
+// Custom patterns loaded from chrome.storage.sync
+let customUrlPatterns = [];
+let customKeywords = {};
+
+/**
+ * Initialize custom patterns from storage
+ * Call this before first use in content scripts
+ */
+async function initCustomPatterns() {
+    try {
+        if (typeof chrome !== 'undefined' && chrome.storage) {
+            const result = await chrome.storage.sync.get(['customUrlPatterns', 'customKeywords']);
+            customUrlPatterns = result.customUrlPatterns || [];
+            customKeywords = result.customKeywords || {};
+            console.log('XSpamSweeper: Loaded custom patterns:',
+                customUrlPatterns.length, 'URLs,',
+                Object.keys(customKeywords).length, 'keywords');
+            console.log('XSpamSweeper: Custom keywords:', customKeywords);
+        }
+    } catch (e) {
+        console.log('XSpamSweeper: Could not load custom patterns', e);
+    }
+}
+
+// Auto-init if in extension context
+if (typeof chrome !== 'undefined' && chrome.storage) {
+    initCustomPatterns();
+}
+
+// =============================================================================
 // URL PATTERNS - Domains that indicate spam/scam
 // =============================================================================
 
@@ -227,6 +260,13 @@ function checkUrlPatterns(text) {
         }
     }
 
+    // Check custom URL patterns (from options page)
+    for (const customPattern of customUrlPatterns) {
+        if (lowerText.includes(customPattern.toLowerCase())) {
+            matchedPatterns.push(`custom:${customPattern}`);
+        }
+    }
+
     if (matchedPatterns.length > 0) {
         return {
             isSpam: true,
@@ -283,6 +323,24 @@ function calculateSpamScore(text) {
         }
     }
 
+    // Check custom keywords (from options page)
+    for (const [keyword, weight] of Object.entries(customKeywords)) {
+        const regex = new RegExp(`\\b${keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'gi');
+        const matches = lowerText.match(regex);
+
+        console.log(`XSpamSweeper: Checking custom keyword "${keyword}" in text "${lowerText.substring(0, 50)}..."`,
+            { regex: regex.toString(), matches });
+
+        if (matches) {
+            score += weight * matches.length;
+            matchedKeywords[`custom:${keyword}`] = {
+                weight,
+                count: matches.length,
+                contribution: weight * matches.length
+            };
+        }
+    }
+
     return { score, matchedKeywords };
 }
 
@@ -317,7 +375,7 @@ function getSpamInfo(text) {
         riskLevel = RISK_LEVELS.HIGH;
     } else if (urlMatch.riskLevel === RISK_LEVELS.MEDIUM || totalScore >= 10) {
         riskLevel = RISK_LEVELS.MEDIUM;
-    } else if (totalScore >= 5 || isHiddenLink) {
+    } else if (totalScore >= 3 || isHiddenLink) {  // 3 = 10% of max (30)
         riskLevel = RISK_LEVELS.LOW;
     }
 
