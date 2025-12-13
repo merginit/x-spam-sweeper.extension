@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.5] - 2025-12-13
+
+### Fixed
+- **Message-Scoped Link Extraction**: Link extraction now searches ONLY within message elements (`card.wrapper`, `messageEntry`, `message-text`, message list items). Previously searched entire page including sidebar, causing user's own profile links to appear in results.
+- **t.co Shortlink Resolution**: Resolves t.co shortlinks by navigating to them and capturing the final URL after redirect. This properly identifies the actual spam domains.
+- **Current User Domain Filtering**: Extracts domains from the logged-in user's bio and website, then filters out any links matching those domains from spam detection results.
+- **Link Deduplication**: Removes duplicate URLs after t.co resolution (e.g., when both t.co link and domain text resolve to same URL).
+
+---
+
 ## [0.2.4] - 2025-12-13
 
 ### Fixed

@@ -99,6 +99,13 @@ const MEDIUM_RISK_URL_PATTERNS = [
     /shorte\.st/i,
     /cutt\.ly/i,
 
+    // Link aggregators (often used by spam/promo accounts)
+    /allmylinks\.com/i,
+    /getmysocial\.com/i,
+    /beacons\.ai/i,
+    /solo\.to/i,
+    /linktr\.ee/i,
+
     // Discord invites (often crypto pump schemes)
     /discord\.gg\//i,
     /discord\.com\/invite/i,

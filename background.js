@@ -315,12 +315,141 @@ async function processLinkResolutionQueue() {
         workerTabId = tab.id;
         console.log('XSpamSweeper Background: Created worker tab', workerTabId);
 
+        // First, extract current user's own profile links to filter them out later
+        let currentUserDomains = [];
+        try {
+            console.log('XSpamSweeper Background: Extracting current user profile links...');
+            // Navigate to home to find the profile link
+            await chrome.tabs.update(workerTabId, { url: 'https://x.com/home' });
+            await waitForTabLoad(workerTabId);
+            await new Promise(r => setTimeout(r, 2000));
+
+            // Get current username
+            const usernameResult = await chrome.scripting.executeScript({
+                target: { tabId: workerTabId },
+                func: function () {
+                    const profileLink = document.querySelector('[data-testid="AppTabBar_Profile_Link"]');
+                    const href = profileLink?.getAttribute('href');
+                    return href ? href.substring(1).split('/')[0] : null;
+                }
+            });
+            const currentUsername = usernameResult?.[0]?.result;
+
+            if (currentUsername) {
+                console.log(`XSpamSweeper Background: Current user is @${currentUsername}`);
+                // Navigate to their profile
+                await chrome.tabs.update(workerTabId, { url: `https://x.com/${currentUsername}` });
+                await waitForTabLoad(workerTabId);
+                await new Promise(r => setTimeout(r, 2000));
+
+                // Extract domains from bio and website
+                const domainsResult = await chrome.scripting.executeScript({
+                    target: { tabId: workerTabId },
+                    func: function () {
+                        const domains = new Set();
+
+                        // Helper to extract domain from text (handles https://domain.com or domain.com)
+                        function extractDomain(text) {
+                            if (!text) return null;
+                            // Remove https:// or http://
+                            let domain = text.trim().replace(/^https?:\/\//i, '');
+                            // Remove path/query
+                            domain = domain.split('/')[0].split('?')[0];
+                            // Check if it's a valid domain
+                            if (domain.match(/^[a-z0-9.-]+\.[a-z]{2,}$/i)) {
+                                return domain.toLowerCase();
+                            }
+                            return null;
+                        }
+
+                        // Get domains from bio links
+                        document.querySelectorAll('[data-testid="UserDescription"] a[href]').forEach(a => {
+                            const text = a.textContent?.trim();
+                            const domain = extractDomain(text);
+                            if (domain) {
+                                domains.add(domain);
+                                console.log('XSpamSweeper: Found bio domain:', domain, 'from text:', text);
+                            }
+                        });
+
+                        // Get domain from website link
+                        const userUrl = document.querySelector('[data-testid="UserUrl"]');
+                        if (userUrl) {
+                            const text = userUrl.textContent?.trim();
+                            const domain = extractDomain(text);
+                            if (domain) {
+                                domains.add(domain);
+                                console.log('XSpamSweeper: Found website domain:', domain, 'from text:', text);
+                            }
+                        }
+
+                        console.log('XSpamSweeper: Current user domains:', [...domains]);
+                        return [...domains];
+                    }
+                });
+                currentUserDomains = domainsResult?.[0]?.result || [];
+                console.log('XSpamSweeper Background: Current user domains:', currentUserDomains);
+            }
+        } catch (error) {
+            console.warn('XSpamSweeper Background: Could not extract current user domains:', error);
+        }
+
         while (linkResolutionQueue.length > 0) {
             const username = linkResolutionQueue.shift();
 
             try {
                 const result = await resolveUserLink(workerTabId, username);
                 console.log(`XSpamSweeper Background: Resolved @${username}:`, result);
+
+                // Resolve t.co shortlinks to actual URLs using tab navigation
+                if (result.links && result.links.length > 0) {
+                    const resolvedLinks = [];
+                    for (const link of result.links) {
+                        if (link.includes('t.co/')) {
+                            try {
+                                // Navigate to t.co link and get final URL
+                                await chrome.tabs.update(workerTabId, { url: link });
+                                await new Promise(r => setTimeout(r, 2000)); // Wait for redirect
+                                const tab = await chrome.tabs.get(workerTabId);
+                                const finalUrl = tab.url;
+                                if (finalUrl && !finalUrl.includes('t.co/')) {
+                                    console.log(`XSpamSweeper Background: Resolved ${link} -> ${finalUrl}`);
+                                    resolvedLinks.push(finalUrl);
+                                } else {
+                                    resolvedLinks.push(link); // Keep original if resolution failed
+                                }
+                            } catch (e) {
+                                console.warn(`XSpamSweeper Background: Failed to resolve ${link}:`, e.message);
+                                resolvedLinks.push(link);
+                            }
+                        } else {
+                            resolvedLinks.push(link);
+                        }
+                    }
+                    // Deduplicate resolved links
+                    result.links = [...new Set(resolvedLinks)];
+                    console.log(`XSpamSweeper Background: After t.co resolution for @${username}: ${result.links.length} unique links:`, result.links);
+                }
+
+                // Filter out the current user's own domains from the results
+                if (result.links && result.links.length > 0 && currentUserDomains.length > 0) {
+                    const originalCount = result.links.length;
+                    result.links = result.links.filter(link => {
+                        // Extract domain from the link
+                        const match = link.match(/https?:\/\/([^\/]+)/i);
+                        const linkDomain = match ? match[1].toLowerCase() : '';
+                        // Check if this domain matches any user domain
+                        const isUserDomain = currentUserDomains.some(userDomain =>
+                            linkDomain === userDomain ||
+                            linkDomain.endsWith('.' + userDomain) ||
+                            link.toLowerCase().includes(userDomain)
+                        );
+                        return !isUserDomain;
+                    });
+                    if (result.links.length < originalCount) {
+                        console.log(`XSpamSweeper Background: Filtered out ${originalCount - result.links.length} user domain links for @${username}`);
+                    }
+                }
 
                 // Store resolved links in chrome.storage
                 if (result.links && result.links.length > 0) {
@@ -483,135 +612,124 @@ function extractLinksFromProfile() {
             const checkForMessages = setInterval(() => {
                 attempts++;
 
-                // Try multiple container selectors - handles BOTH old and new X UIs
-                const containers = [
-                    // Old UI selectors
-                    document.querySelector('[data-testid="DMDrawer"]'),
-                    document.querySelector('[data-testid="DmScrollerContainer"]'),
-                    document.querySelector('[data-testid="DMCompositeMessage"]'),
-                    document.querySelector('[data-testid="messageEntry"]')?.closest('[role="dialog"]'),
-                    document.querySelector('[data-testid="cellInnerDiv"]')?.closest('[class*="r-"]'),
-                    // Fallback: look for any area with message entries
-                    document.querySelector('[data-testid="messageEntry"]')?.parentElement?.parentElement?.parentElement,
-                    // New UI selectors (Tailwind-based)
-                    document.querySelector('li[style*="position: absolute"]'),
-                    document.querySelector('[data-testid*="message-text"]'),
-                    document.querySelector('.font-chirp'),
-                    // Any visible dialog/drawer
-                    document.querySelector('[role="dialog"]'),
-                    document.querySelector('[class*="drawer"]'),
-                    document.querySelector('[class*="modal"]')
-                ].filter(Boolean)[0];
+                // Check if message content has loaded (either UI)
+                const hasMessageContent =
+                    document.querySelector('[data-testid="messageEntry"]') ||
+                    document.querySelector('[data-testid="card.wrapper"]') ||
+                    document.querySelector('[data-testid*="message-text"]') ||
+                    document.querySelector('li[style*="position: absolute"]');
 
-                // Also check if we can find any URLs on the page (either UI)
-                const hasContent = containers ||
-                    document.querySelector('[data-testid*="message"]') ||
-                    document.body.textContent.match(/https?:\/\/[^\s]+/);
+                console.log(`XSpamSweeper: Attempt ${attempts}/${maxAttempts}, hasMessageContent: ${!!hasMessageContent}`);
 
-                console.log(`XSpamSweeper: Attempt ${attempts}/${maxAttempts}, container: ${!!containers}, hasContent: ${!!hasContent}`);
-
-                if (hasContent || attempts >= maxAttempts) {
+                if (hasMessageContent || attempts >= maxAttempts) {
                     clearInterval(checkForMessages);
 
                     const links = [];
-                    const searchArea = document.body; // Search entire body for robustness
 
-                    // Look for link cards (link previews with thumbnails) - OLD UI
-                    const cardLinks = searchArea.querySelectorAll('[data-testid="card.wrapper"] a[href]');
-                    console.log(`XSpamSweeper: Found ${cardLinks.length} card links`);
-                    cardLinks.forEach(a => {
-                        const href = a.href;
-                        if (href && !href.includes('x.com') && !href.includes('twitter.com')) {
-                            links.push(href);
+                    // Strategy: Find message elements directly and extract links from each
+                    // This avoids container detection issues
+
+                    // OLD UI: Link cards with previews (these contain the actual spam links)
+                    const cardWrappers = document.querySelectorAll('[data-testid="card.wrapper"]');
+                    console.log(`XSpamSweeper: Found ${cardWrappers.length} card.wrapper elements`);
+                    cardWrappers.forEach(card => {
+                        // Get the t.co link from the card
+                        const cardLink = card.querySelector('a[href]');
+                        if (cardLink && cardLink.href) {
+                            const href = cardLink.href;
+                            if (!href.includes('x.com') && !href.includes('twitter.com') && !links.includes(href)) {
+                                links.push(href);
+                                console.log(`XSpamSweeper: Found card link: ${href}`);
+                            }
                         }
-                        // OLD UI: Extract domain from card description text (e.g., "onlyfans.com")
-                        const cardDetail = a.querySelector('[data-testid="card.layoutSmall.detail"]');
-                        if (cardDetail) {
-                            const domainText = cardDetail.querySelector('div[dir="auto"]')?.textContent?.trim();
+                        // Also get the domain text displayed on the card (e.g., "allmylinks.com")
+                        const domainDiv = card.querySelector('[data-testid="card.layoutSmall.detail"] div[dir="auto"]');
+                        if (domainDiv) {
+                            const domainText = domainDiv.textContent?.trim();
                             if (domainText && domainText.match(/^[a-z0-9.-]+\.[a-z]{2,}$/i)) {
                                 const domainUrl = 'https://' + domainText;
                                 if (!links.includes(domainUrl)) {
                                     links.push(domainUrl);
-                                    console.log(`XSpamSweeper: Extracted domain from card: ${domainUrl}`);
+                                    console.log(`XSpamSweeper: Found card domain: ${domainUrl}`);
                                 }
                             }
                         }
                     });
 
-                    // Look for any external links in message entries - OLD UI
-                    const messageEntries = searchArea.querySelectorAll('[data-testid="messageEntry"]');
-                    console.log(`XSpamSweeper: Found ${messageEntries.length} message entries (old UI)`);
+                    // OLD UI: Message entries (contain text with links)
+                    const messageEntries = document.querySelectorAll('[data-testid="messageEntry"]');
+                    console.log(`XSpamSweeper: Found ${messageEntries.length} messageEntry elements`);
                     messageEntries.forEach(entry => {
-                        const entryLinks = entry.querySelectorAll('a[href]');
-                        entryLinks.forEach(a => {
+                        entry.querySelectorAll('a[href]').forEach(a => {
                             const href = a.href;
-                            if (href &&
-                                !href.includes('x.com') &&
-                                !href.includes('twitter.com') &&
-                                !href.startsWith('javascript:') &&
-                                !links.includes(href)) {
+                            if (href && !href.includes('x.com') && !href.includes('twitter.com') &&
+                                !href.startsWith('javascript:') && !links.includes(href)) {
                                 links.push(href);
+                                console.log(`XSpamSweeper: Found messageEntry link: ${href}`);
                             }
                         });
                     });
 
-                    // Check for t.co links (Twitter's shortener) anywhere
-                    const tcoLinks = document.querySelectorAll('a[href*="t.co"]');
-                    console.log(`XSpamSweeper: Found ${tcoLinks.length} t.co links`);
-                    tcoLinks.forEach(a => {
-                        if (!links.includes(a.href)) {
-                            links.push(a.href);
-                        }
-                    });
-
-                    // NEW UI: Extract URLs from .font-chirp elements (Tailwind-based UI)
-                    const fontChirpElements = searchArea.querySelectorAll('.font-chirp');
-                    console.log(`XSpamSweeper: Found ${fontChirpElements.length} font-chirp elements`);
-                    fontChirpElements.forEach(el => {
-                        const text = el.textContent?.trim() || '';
-                        if (text.match(/^https?:\/\//i)) {
-                            if (!text.includes('x.com') && !text.includes('twitter.com') && !links.includes(text)) {
-                                links.push(text);
-                                console.log(`XSpamSweeper: Extracted URL from font-chirp: ${text}`);
+                    // NEW UI: Message text elements (data-testid contains "message-text")
+                    const messageTexts = document.querySelectorAll('[data-testid*="message-text"]');
+                    console.log(`XSpamSweeper: Found ${messageTexts.length} message-text elements`);
+                    messageTexts.forEach(el => {
+                        el.querySelectorAll('a[href]').forEach(a => {
+                            const href = a.href;
+                            if (href && !href.includes('x.com') && !href.includes('twitter.com') &&
+                                !href.startsWith('javascript:') && !links.includes(href)) {
+                                links.push(href);
+                                console.log(`XSpamSweeper: Found message-text link: ${href}`);
                             }
-                        }
+                        });
                     });
 
-                    // NEW UI: Extract URLs from plain text (Tailwind-based UI shows URLs as text)
-                    const urlRegex = /https?:\/\/[^\s<>"']+/gi;
-                    const pageText = searchArea.textContent || '';
-                    const textUrls = pageText.match(urlRegex) || [];
-                    console.log(`XSpamSweeper: Found ${textUrls.length} URLs in page text`);
-                    textUrls.forEach(url => {
-                        // Filter out X/Twitter URLs
-                        if (!url.includes('x.com') &&
-                            !url.includes('twitter.com') &&
-                            !links.includes(url)) {
-                            links.push(url);
-                        }
-                    });
-
-                    // Also look for ALL anchor tags with external hrefs
-                    const allLinks = document.querySelectorAll('a[href]');
-                    console.log(`XSpamSweeper: Checking ${allLinks.length} total links on page`);
-                    allLinks.forEach(a => {
-                        const href = a.href;
-                        if (href &&
-                            !href.includes('x.com') &&
-                            !href.includes('twitter.com') &&
-                            !href.startsWith('javascript:') &&
-                            !href.startsWith('about:') &&
-                            !links.includes(href)) {
-                            links.push(href);
-                        }
+                    // NEW UI: Look in list items that contain messages (position: absolute style)
+                    const messageItems = document.querySelectorAll('li[style*="position: absolute"]');
+                    console.log(`XSpamSweeper: Found ${messageItems.length} message list items (new UI)`);
+                    messageItems.forEach(li => {
+                        // Get links from anchors
+                        li.querySelectorAll('a[href]').forEach(a => {
+                            const href = a.href;
+                            if (href && !href.includes('x.com') && !href.includes('twitter.com') &&
+                                !href.startsWith('javascript:') && !links.includes(href)) {
+                                links.push(href);
+                                console.log(`XSpamSweeper: Found list item link: ${href}`);
+                            }
+                        });
+                        // Also check for URL text in font-chirp elements
+                        li.querySelectorAll('.font-chirp').forEach(el => {
+                            const text = el.textContent?.trim() || '';
+                            if (text.match(/^https?:\/\//i) && !text.includes('x.com') &&
+                                !text.includes('twitter.com') && !links.includes(text)) {
+                                links.push(text);
+                                console.log(`XSpamSweeper: Found font-chirp URL: ${text}`);
+                            }
+                        });
                     });
 
                     console.log(`XSpamSweeper: Total ${links.length} unique links extracted after ${attempts} attempts`);
 
+                    // Filter out irrelevant URLs
+                    function isRelevantUrl(url) {
+                        if (!url) return false;
+                        const lowerUrl = url.toLowerCase();
+                        if (lowerUrl.includes('w3.org/2000/svg') || lowerUrl.includes('w3.org/1999/xlink')) return false;
+                        if (lowerUrl.includes('twimg.com') || lowerUrl.includes('twemoji.') ||
+                            lowerUrl.includes('responsive-web/') || lowerUrl.includes('/client-web/')) return false;
+                        if (lowerUrl.startsWith('javascript:') || lowerUrl.startsWith('about:') ||
+                            lowerUrl.startsWith('data:') || lowerUrl.startsWith('blob:')) return false;
+                        return true;
+                    }
+
+                    const filteredLinks = [...new Set(links)].filter(isRelevantUrl);
+                    console.log(`XSpamSweeper: ${filteredLinks.length} links after filtering`);
+
                     resolve({
-                        links: [...new Set(links)],
-                        messageCount: messageEntries.length || document.querySelectorAll('li[style*="position"]').length,
-                        containerFound: !!containers,
+                        links: filteredLinks,
+                        rawLinkCount: links.length,
+                        messageCount: messageEntries.length || messageItems.length,
+                        containerFound: true,
                         attempts
                     });
                 }
