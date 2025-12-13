@@ -302,20 +302,28 @@ function getSpamInfo(text) {
     // Calculate keyword score
     const keywordMatch = calculateSpamScore(text);
 
+    // Add score bonus for URL pattern matches
+    let totalScore = keywordMatch.score;
+    if (urlMatch.riskLevel === RISK_LEVELS.HIGH) {
+        totalScore += 15; // High-risk URL = 15 points
+    } else if (urlMatch.riskLevel === RISK_LEVELS.MEDIUM) {
+        totalScore += 8;  // Medium-risk URL = 8 points
+    }
+
     // Determine overall risk level
     let riskLevel = RISK_LEVELS.SAFE;
 
     if (urlMatch.riskLevel === RISK_LEVELS.HIGH) {
         riskLevel = RISK_LEVELS.HIGH;
-    } else if (urlMatch.riskLevel === RISK_LEVELS.MEDIUM || keywordMatch.score >= 10) {
+    } else if (urlMatch.riskLevel === RISK_LEVELS.MEDIUM || totalScore >= 10) {
         riskLevel = RISK_LEVELS.MEDIUM;
-    } else if (keywordMatch.score >= 5 || isHiddenLink) {
+    } else if (totalScore >= 5 || isHiddenLink) {
         riskLevel = RISK_LEVELS.LOW;
     }
 
     return {
         riskLevel,
-        score: keywordMatch.score,
+        score: totalScore,
         urlMatch,
         keywordMatch,
         isHiddenLink

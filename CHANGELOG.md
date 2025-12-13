@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.2] - 2025-12-13
+
+### Added
+- **Hidden Link Resolution**:
+  - Background worker pattern with queue management and rate limiting (3s delay).
+  - Worker tab navigates to profiles to extract actual links from "Sent a link" messages.
+  - New "Resolve Links" button in popup header to trigger link resolution.
+  - Popup auto-refreshes when links are resolved.
+
+---
+
 ## [0.2.1] - 2025-12-13
 
 ### Added

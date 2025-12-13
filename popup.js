@@ -37,6 +37,7 @@ const menuBtn = document.getElementById('menuBtn');
 const deleteBtn = document.getElementById('deleteBtn');
 const submenu = document.getElementById('submenu');
 const refreshBtn = document.getElementById('refreshBtn');
+const resolveLinksBtn = document.getElementById('resolveLinksBtn');
 const filterToggleBtn = document.getElementById('filterToggleBtn');
 const goToRequestsBtn = document.getElementById('goToRequestsBtn');
 const statusBar = document.getElementById('status');
@@ -81,11 +82,23 @@ function updateSelectionUI() {
     sweepBtn.disabled = !hasSelection;
     menuBtn.disabled = !hasSelection;
 
-    // Update select all checkbox state
-    if (count === 0) {
+    // Get visible requests based on filter state (must match renderRequestsList filter)
+    const visibleRequests = isFilterActive
+        ? messageRequests.filter(req => {
+            const riskLevel = req.spamInfo?.riskLevel || 'safe';
+            return riskLevel === 'high' || riskLevel === 'medium';
+        })
+        : messageRequests;
+
+    const visibleSelectedCount = visibleRequests.filter(req =>
+        selectedUsernames.has(req.username)
+    ).length;
+
+    // Update select all checkbox state based on visible items
+    if (visibleSelectedCount === 0) {
         selectAllCheckbox.checked = false;
         selectAllCheckbox.indeterminate = false;
-    } else if (count === messageRequests.length) {
+    } else if (visibleSelectedCount === visibleRequests.length) {
         selectAllCheckbox.checked = true;
         selectAllCheckbox.indeterminate = false;
     } else {
@@ -121,14 +134,28 @@ function updateRequestItemUI(username) {
 }
 
 /**
- * Select or deselect all requests
+ * Select or deselect all requests (respects current filter)
  */
 function toggleSelectAll() {
-    if (selectedUsernames.size === messageRequests.length) {
-        selectedUsernames.clear();
-    } else {
-        messageRequests.forEach(req => selectedUsernames.add(req.username));
+    // Get only the visible requests based on filter state (must match renderRequestsList filter)
+    const visibleRequests = isFilterActive
+        ? messageRequests.filter(req => {
+            const riskLevel = req.spamInfo?.riskLevel || 'safe';
+            return riskLevel === 'high' || riskLevel === 'medium';
+        })
+        : messageRequests;
+
+    const allVisibleSelected = visibleRequests.every(req => selectedUsernames.has(req.username));
+
+    // Clear ALL selections first to avoid hidden items staying selected
+    selectedUsernames.clear();
+
+    if (!allVisibleSelected) {
+        // Select all visible
+        visibleRequests.forEach(req => selectedUsernames.add(req.username));
     }
+    // If allVisibleSelected was true, we just clear (deselect all)
+
     updateSelectionUI();
     messageRequests.forEach(req => updateRequestItemUI(req.username));
 }
@@ -146,19 +173,20 @@ function createRequestItem(request) {
     item.dataset.username = request.username;
 
     // Create spam badge HTML based on risk level
+    const maxScore = 30;
     let spamBadgeHtml = '';
     if (riskLevel === 'high') {
-        spamBadgeHtml = `<span class="spam-badge high" title="High spam risk: ${spamInfo.score} points">
+        spamBadgeHtml = `<span class="spam-badge high" title="High spam risk: ${spamInfo.score}/${maxScore}">
           <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
           SPAM
         </span>`;
     } else if (riskLevel === 'medium') {
-        spamBadgeHtml = `<span class="spam-badge medium" title="Medium risk: ${spamInfo.score} points">
+        spamBadgeHtml = `<span class="spam-badge medium" title="Medium risk: ${spamInfo.score}/${maxScore}">
           <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
           SUS
         </span>`;
     } else if (riskLevel === 'low' && (spamInfo.score > 0 || spamInfo.isHiddenLink)) {
-        const title = spamInfo.isHiddenLink ? 'Hidden link needs verification' : `Low risk: ${spamInfo.score} points`;
+        const title = spamInfo.isHiddenLink ? 'Hidden link needs verification' : `Low risk: ${spamInfo.score}/${maxScore}`;
         spamBadgeHtml = `<span class="spam-badge low" title="${title}">?</span>`;
     }
 
@@ -319,6 +347,43 @@ async function fetchMessageRequests() {
         }
 
         messageRequests = response.data || [];
+
+        // Enhance messages with resolved link data from storage
+        try {
+            const storage = await chrome.storage.local.get(['resolvedLinks']);
+            const resolvedLinks = storage.resolvedLinks || {};
+
+            messageRequests = messageRequests.map(req => {
+                const resolved = resolvedLinks[req.username];
+                if (resolved && resolved.links && resolved.links.length > 0) {
+                    // We have resolved links for this user - reanalyze spam
+                    const linksText = resolved.links.join(' ');
+                    const updatedSpamInfo = typeof getSpamInfo === 'function'
+                        ? getSpamInfo(linksText)
+                        : req.spamInfo;
+
+                    console.log(`XSpamSweeper: Re-analyzed @${req.username} with resolved links:`, {
+                        links: resolved.links,
+                        linksText,
+                        updatedSpamInfo
+                    });
+
+                    return {
+                        ...req,
+                        resolvedLinks: resolved.links,
+                        spamInfo: {
+                            ...updatedSpamInfo,
+                            isHiddenLink: false,
+                            resolvedAt: resolved.resolvedAt
+                        }
+                    };
+                }
+                return req;
+            });
+        } catch (e) {
+            console.log('XSpamSweeper: Could not load resolved links', e);
+        }
+
         renderRequestsList();
 
         if (messageRequests.length > 0) {
@@ -370,6 +435,37 @@ async function goToMessageRequests() {
 refreshBtn.addEventListener('click', fetchMessageRequests);
 selectAllCheckbox.addEventListener('change', toggleSelectAll);
 goToRequestsBtn.addEventListener('click', goToMessageRequests);
+
+// Resolve hidden links button
+resolveLinksBtn?.addEventListener('click', async () => {
+    // Find all users with hidden links
+    const hiddenLinkUsers = messageRequests
+        .filter(req => req.spamInfo?.isHiddenLink)
+        .map(req => req.username);
+
+    if (hiddenLinkUsers.length === 0) {
+        setStatus('No hidden links to resolve');
+        return;
+    }
+
+    setStatus(`Resolving ${hiddenLinkUsers.length} hidden link(s)...`);
+
+    try {
+        const response = await chrome.runtime.sendMessage({
+            action: 'resolveSentLinks',
+            users: hiddenLinkUsers
+        });
+
+        if (response?.success) {
+            setStatus(response.message, 'success');
+        } else {
+            setStatus(response?.message || 'Failed to start resolution', 'error');
+        }
+    } catch (error) {
+        setStatus('Error starting link resolution', 'error');
+        console.error('XSpamSweeper: Link resolution error:', error);
+    }
+});
 
 // Toggle submenu visibility
 function toggleSubmenu() {
@@ -548,13 +644,26 @@ filterToggleBtn?.addEventListener('click', toggleFilter);
 chrome.runtime.onMessage.addListener((request, _sender, _sendResponse) => {
     if (request.action === 'domUpdated') {
         console.log('XSpamSweeper Popup: DOM updated, refreshing list');
-        // Debounce refresh to avoid rapid re-fetches
         if (!window._refreshPending) {
             window._refreshPending = true;
             setTimeout(async () => {
                 await fetchMessageRequests();
                 window._refreshPending = false;
             }, 500);
+        }
+    }
+
+    if (request.action === 'linkResolved') {
+        console.log(`XSpamSweeper Popup: Link resolved for @${request.username}:`, request.result);
+        setStatus(`Resolved @${request.username}: ${request.result?.links?.length || 0} links found`);
+
+        // Refresh to pick up updated spam analysis
+        if (!window._refreshPending) {
+            window._refreshPending = true;
+            setTimeout(async () => {
+                await fetchMessageRequests();
+                window._refreshPending = false;
+            }, 1000);
         }
     }
 });
