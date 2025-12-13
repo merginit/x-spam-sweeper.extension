@@ -19,6 +19,7 @@
 // State
 let messageRequests = [];
 let selectedUsernames = new Set();
+let isFilterActive = false;
 
 // DOM Elements
 const requestsList = document.getElementById('requestsList');
@@ -36,6 +37,7 @@ const menuBtn = document.getElementById('menuBtn');
 const deleteBtn = document.getElementById('deleteBtn');
 const submenu = document.getElementById('submenu');
 const refreshBtn = document.getElementById('refreshBtn');
+const filterToggleBtn = document.getElementById('filterToggleBtn');
 const goToRequestsBtn = document.getElementById('goToRequestsBtn');
 const statusBar = document.getElementById('status');
 
@@ -136,10 +138,38 @@ function toggleSelectAll() {
  */
 function createRequestItem(request) {
     const isSelected = selectedUsernames.has(request.username);
+    const spamInfo = request.spamInfo || { riskLevel: 'safe', score: 0, isHiddenLink: false };
+    const riskLevel = spamInfo.riskLevel || 'safe';
 
     const item = document.createElement('div');
-    item.className = `request-item${isSelected ? ' selected' : ''}`;
+    item.className = `request-item spam-${riskLevel}${isSelected ? ' selected' : ''}`;
     item.dataset.username = request.username;
+
+    // Create spam badge HTML based on risk level
+    let spamBadgeHtml = '';
+    if (riskLevel === 'high') {
+        spamBadgeHtml = `<span class="spam-badge high" title="High spam risk: ${spamInfo.score} points">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+          SPAM
+        </span>`;
+    } else if (riskLevel === 'medium') {
+        spamBadgeHtml = `<span class="spam-badge medium" title="Medium risk: ${spamInfo.score} points">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+          SUS
+        </span>`;
+    } else if (riskLevel === 'low' && (spamInfo.score > 0 || spamInfo.isHiddenLink)) {
+        const title = spamInfo.isHiddenLink ? 'Hidden link needs verification' : `Low risk: ${spamInfo.score} points`;
+        spamBadgeHtml = `<span class="spam-badge low" title="${title}">?</span>`;
+    }
+
+    // Hidden link indicator
+    let hiddenLinkHtml = '';
+    if (spamInfo.isHiddenLink) {
+        hiddenLinkHtml = `<span class="hidden-link-indicator" title="Link hidden - may need resolution">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"/></svg>
+          Hidden link
+        </span>`;
+    }
 
     item.innerHTML = `
     <div class="request-checkbox">
@@ -158,9 +188,10 @@ function createRequestItem(request) {
       <div class="request-header">
         <span class="request-name">${escapeHtml(request.displayName)}</span>
         <span class="request-username">@${escapeHtml(request.username)}</span>
+        ${spamBadgeHtml}
         <span class="request-date">${escapeHtml(request.date)}</span>
       </div>
-      <div class="request-message">${escapeHtml(request.messagePreview)}</div>
+      <div class="request-message"><span class="request-message-text">${escapeHtml(request.messagePreview)}</span>${hiddenLinkHtml}</div>
     </div>
   `;
 
@@ -191,7 +222,21 @@ function renderRequestsList() {
         return;
     }
 
-    messageRequests.forEach(request => {
+    // Filter requests based on filter toggle
+    const requestsToShow = isFilterActive
+        ? messageRequests.filter(req => {
+            const riskLevel = req.spamInfo?.riskLevel || 'safe';
+            return riskLevel === 'high' || riskLevel === 'medium';
+        })
+        : messageRequests;
+
+    if (requestsToShow.length === 0) {
+        // Show empty state with filter-specific message
+        showState('empty');
+        return;
+    }
+
+    requestsToShow.forEach(request => {
         requestsList.appendChild(createRequestItem(request));
     });
 
@@ -447,4 +492,61 @@ reportBtn.addEventListener('click', async () => {
     await performBatchAction('report', 'Reporting');
 });
 
-document.addEventListener('DOMContentLoaded', fetchMessageRequests);
+/**
+ * Toggle spam filter mode
+ */
+function toggleFilter() {
+    isFilterActive = !isFilterActive;
+    updateFilterUI();
+
+    // Save preference to storage
+    chrome.storage.local.set({ isFilterActive });
+
+    // Re-render the list with new filter state
+    renderRequestsList();
+
+    const spamCount = messageRequests.filter(req => {
+        const riskLevel = req.spamInfo?.riskLevel || 'safe';
+        return riskLevel === 'high' || riskLevel === 'medium';
+    }).length;
+
+    if (isFilterActive) {
+        setStatus(`Showing ${spamCount} suspicious message${spamCount !== 1 ? 's' : ''}`);
+    } else {
+        setStatus(`Showing all ${messageRequests.length} message${messageRequests.length !== 1 ? 's' : ''}`);
+    }
+}
+
+/**
+ * Update filter button UI based on state
+ */
+function updateFilterUI() {
+    if (filterToggleBtn) {
+        filterToggleBtn.classList.toggle('active', isFilterActive);
+        filterToggleBtn.title = isFilterActive
+            ? 'Toggle spam filter (showing spam only)'
+            : 'Toggle spam filter (showing all)';
+    }
+}
+
+/**
+ * Load saved filter preference from storage
+ */
+async function loadFilterPreference() {
+    try {
+        const result = await chrome.storage.local.get(['isFilterActive']);
+        isFilterActive = result.isFilterActive || false;
+        updateFilterUI();
+    } catch (e) {
+        console.log('XSpamSweeper: Could not load filter preference');
+    }
+}
+
+// Filter toggle button
+filterToggleBtn?.addEventListener('click', toggleFilter);
+
+// Initialize on DOM ready
+document.addEventListener('DOMContentLoaded', async () => {
+    await loadFilterPreference();
+    await fetchMessageRequests();
+});

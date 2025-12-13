@@ -106,6 +106,16 @@ body {
     height: 20px;
 }
 
+/* Filter toggle button */
+.filter-btn.active {
+    background-color: var(--accent-blue);
+    color: white;
+}
+
+.filter-btn.active:hover {
+    background-color: var(--accent-blue-hover);
+}
+
 /* Status bar */
 .status {
     padding: 8px 16px;
@@ -349,11 +359,86 @@ body {
     font-size: 14px;
     color: var(--text-secondary);
     line-height: 1.4;
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 8px;
+}
+
+.request-message-text {
     display: -webkit-box;
     -webkit-line-clamp: 2;
     line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
+    flex: 1;
+}
+
+/* Spam Risk Indicators */
+.request-item.spam-high {
+    border-left: 3px solid var(--danger);
+    background-color: rgba(244, 33, 46, 0.05);
+}
+
+.request-item.spam-medium {
+    border-left: 3px solid #f5a623;
+    background-color: rgba(245, 166, 35, 0.05);
+}
+
+.request-item.spam-low {
+    border-left: 3px solid var(--success);
+}
+
+.request-item.spam-safe {
+    border-left: 3px solid transparent;
+}
+
+.spam-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    flex-shrink: 0;
+}
+
+.spam-badge.high {
+    background-color: rgba(244, 33, 46, 0.2);
+    color: var(--danger);
+}
+
+.spam-badge.medium {
+    background-color: rgba(245, 166, 35, 0.2);
+    color: #f5a623;
+}
+
+.spam-badge.low {
+    background-color: rgba(0, 186, 124, 0.2);
+    color: var(--success);
+}
+
+.spam-badge svg {
+    width: 12px;
+    height: 12px;
+}
+
+/* Hidden link indicator */
+.hidden-link-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    color: var(--text-secondary);
+    font-size: 12px;
+    font-style: italic;
+}
+
+.hidden-link-indicator svg {
+    width: 14px;
+    height: 14px;
 }
 
 /* States */

@@ -2,6 +2,30 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.0] - 2025-12-13
+
+### Added
+- **Spam Detection (Issue #2)**: Privacy-first spam filtering without cloud APIs.
+  - Created `spam-patterns.js` with centralized pattern configuration.
+  - URL blocklist: Adult content (OnlyFans, Fansly, etc.), off-platform redirects (WhatsApp, Telegram), suspicious shorteners (bit.ly, discord.gg).
+  - Keyword weights for crypto/investment scams, urgency tactics, romance scams.
+  - Safe domain whitelist (YouTube, Twitter/X, Spotify, GitHub, etc.).
+  - `calculateSpamScore()` and `getSpamInfo()` functions for risk assessment.
+- **Visual Spam Indicators**: 
+  - Red border + "SPAM" badge for high-risk messages.
+  - Yellow border + "SUS" badge for medium-risk messages.
+  - Green border for low-risk messages with score.
+  - "Hidden link" indicator for "Sent a link" placeholders.
+- **Filter Toggle**: Shield button in header to show only suspicious messages.
+  - Toggle between "Show All" and "Show Spam Only" modes.
+  - Preference saved to chrome.storage.
+
+### Changed
+- Bumped version to 0.2.0, added `storage` permission.
+- Updated content script loading order: `spam-patterns.js` → `shared.js` → `content.js`.
+
+---
+
 ## [0.1.13] - 2025-12-11
 
 ### Changed

@@ -26,6 +26,15 @@
     }
     window.__xSpamSweeperLoaded = true;
 
+    // Fallback for shared.js functions if not loaded
+    const _extractTextWithEmojis = typeof extractTextWithEmojis === 'function'
+        ? extractTextWithEmojis
+        : (el) => el?.textContent?.trim() || '';
+
+    const _getSpamInfo = typeof getSpamInfo === 'function'
+        ? getSpamInfo
+        : () => ({ riskLevel: 'safe', score: 0, isHiddenLink: false });
+
     /**
      * Extract message request data from the current page
      * Uses stable data-testid selectors that are unlikely to change
@@ -59,7 +68,7 @@
                 let messageElement = cell.querySelector('[data-testid="tweetText"]');
                 let messagePreview = '';
                 if (messageElement) {
-                    const fullText = extractTextWithEmojis(messageElement);
+                    const fullText = _extractTextWithEmojis(messageElement);
                     messagePreview = fullText.substring(0, 150);
                     if (fullText.length > 150) {
                         messagePreview += '...';
@@ -94,16 +103,18 @@
                 // It's the first text element that isn't the @username
                 const nameContainer = conversation.querySelector('[dir="ltr"][class*="r-b88u0q"]');
                 if (nameContainer) {
-                    displayName = extractTextWithEmojis(nameContainer);
+                    displayName = _extractTextWithEmojis(nameContainer);
                 }
 
                 // Fallback: if no name found, use the conversation text split
                 if (!displayName || displayName === username) {
                     const firstTextDiv = conversation.querySelector('[dir="ltr"]');
                     if (firstTextDiv) {
-                        displayName = extractTextWithEmojis(firstTextDiv);
+                        displayName = _extractTextWithEmojis(firstTextDiv);
                     }
                 }
+
+                const spamInfo = _getSpamInfo(messagePreview);
 
                 requests.push({
                     username,
@@ -112,7 +123,8 @@
                     messagePreview,
                     date: dateStr,
                     dateIso,
-                    profileUrl: `https://x.com/${username}`
+                    profileUrl: `https://x.com/${username}`,
+                    spamInfo
                 });
 
             } catch (err) {
