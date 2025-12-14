@@ -270,6 +270,7 @@ function renderRequestsList() {
 
     showState('list');
     updateSelectionUI();
+    updateFilterBadge();
 }
 
 /**
@@ -368,8 +369,27 @@ async function fetchMessageRequests() {
                         updatedSpamInfo
                     });
 
+                    // Update message preview to show actual URL(s) instead of "Sent a link"
+                    let updatedMessagePreview = req.messagePreview;
+                    if (/^sent a link$/i.test(req.messagePreview.trim())) {
+                        // Format resolved links for display
+                        const displayLinks = resolved.links.map(link => {
+                            try {
+                                const url = new URL(link);
+                                return url.hostname + (url.pathname !== '/' ? url.pathname : '');
+                            } catch {
+                                return link;
+                            }
+                        });
+                        updatedMessagePreview = displayLinks.slice(0, 2).join(', ');
+                        if (resolved.links.length > 2) {
+                            updatedMessagePreview += ` +${resolved.links.length - 2} more`;
+                        }
+                    }
+
                     return {
                         ...req,
+                        messagePreview: updatedMessagePreview,
                         resolvedLinks: resolved.links,
                         spamInfo: {
                             ...updatedSpamInfo,
@@ -622,6 +642,33 @@ function updateFilterUI() {
         filterToggleBtn.title = isFilterActive
             ? 'Toggle spam filter (showing spam only)'
             : 'Toggle spam filter (showing all)';
+    }
+    updateFilterBadge();
+}
+
+/**
+ * Update the filter button badge with spam count
+ */
+function updateFilterBadge() {
+    if (!filterToggleBtn) return;
+
+    const spamCount = messageRequests.filter(req => {
+        const riskLevel = req.spamInfo?.riskLevel || 'safe';
+        return riskLevel === 'high' || riskLevel === 'medium';
+    }).length;
+
+    // Find or create the badge element
+    let badge = filterToggleBtn.querySelector('.filter-badge');
+    if (spamCount > 0) {
+        if (!badge) {
+            badge = document.createElement('span');
+            badge.className = 'filter-badge';
+            filterToggleBtn.appendChild(badge);
+        }
+        badge.textContent = spamCount > 99 ? '99+' : spamCount;
+        badge.style.display = '';
+    } else if (badge) {
+        badge.style.display = 'none';
     }
 }
 

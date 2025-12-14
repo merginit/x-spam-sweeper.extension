@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.10] - 2025-12-14
+
+### Improved
+- **Resolved URL Display**: Message preview now shows actual resolved URLs (e.g., `allmylinks.com/user`) instead of generic "Sent a link" text after link resolution.
+- **Filter Badge Count**: Filter button now displays a badge with the spam count that updates immediately on page load, even without interacting with the filter toggle.
+
+---
+
 ## [0.2.9] - 2025-12-14
 
 ### Improved

@@ -116,6 +116,28 @@ body {
     background-color: var(--accent-blue-hover);
 }
 
+.filter-btn {
+    position: relative;
+}
+
+.filter-badge {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    min-width: 16px;
+    height: 16px;
+    padding: 0 4px;
+    background-color: var(--danger);
+    color: white;
+    font-size: 10px;
+    font-weight: 700;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+}
+
 /* Status bar */
 .status {
     padding: 8px 16px;
@@ -391,6 +413,17 @@ body {
 
 .request-item.spam-safe {
     border-left: 3px solid transparent;
+}
+
+/* Selected state overrides for spam items */
+.request-item.spam-high.selected,
+.request-item.spam-medium.selected {
+    background-color: var(--bg-selected);
+}
+
+.request-item.spam-high.selected:hover,
+.request-item.spam-medium.selected:hover {
+    background-color: var(--bg-selected);
 }
 
 .spam-badge {
