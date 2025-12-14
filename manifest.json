@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "__MSG_appName__",
   "short_name": "__MSG_appShortName__",
-  "version": "0.2.14",
+  "version": "0.3.0",
   "description": "__MSG_appDesc__",
   "homepage_url": "https://github.com/jonasfroeller/x-spam-sweeper",
   "default_locale": "en",
@@ -35,6 +35,7 @@
         "https://twitter.com/*"
       ],
       "js": [
+        "ai-service.js",
         "spam-patterns.js",
         "shared.js",
         "content.js"

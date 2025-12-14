@@ -2,6 +2,27 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.0] - 2025-12-14
+
+### Added
+- **AI-Powered Spam Detection (Experimental, Issue #1)**: Chrome's built-in Gemini Nano model can now analyze suspicious messages for sophisticated spam patterns.
+  - New `ai-service.js` module for Chrome Prompt API (Gemini Nano) integration with lazy session initialization.
+  - AI only runs on "SUS zone" messages (score 5-19) - avoiding unnecessary processing on clear spam or safe messages.
+  - AI can upgrade messages to HIGH risk if confident spam is detected, or downgrade to SAFE if clearly not spam.
+  - Graceful fallback - extension works unchanged when AI is unavailable.
+- **Settings Toggle**: New "AI Spam Detection" section in Options page.
+  - Enable/disable AI scanning.
+  - Status indicator showing AI availability (Available ✓, Downloading, Not Available).
+  - Requirements info box explaining Chrome flags and hardware needs.
+- **AI Verdict Badge**: Purple "AI" badge shown on messages that were analyzed by AI, with tooltip showing reason.
+
+### Technical
+- Created `ai-service.js` with `checkAIAvailability()`, `scanWithAI()`, and session management.
+- Added `getSpamInfoWithAI()` async wrapper in `spam-patterns.js` combining heuristics with AI.
+- Updated manifest to include `ai-service.js` in content scripts.
+
+---
+
 ## [0.2.14] - 2025-12-14
 
 ### Fixed

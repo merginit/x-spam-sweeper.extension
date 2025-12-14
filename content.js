@@ -502,6 +502,37 @@
             return true;
         }
 
+        // AI analysis handler - runs in content script context where Chrome AI is available
+        if (request.action === 'analyzeWithAI') {
+            (async () => {
+                try {
+                    // Check if AI functions are available
+                    if (typeof getSpamInfoWithAI !== 'function') {
+                        console.log('XSpamSweeper: getSpamInfoWithAI not available');
+                        sendResponse({ success: false, error: 'AI not available' });
+                        return;
+                    }
+
+                    const text = request.text;
+                    const username = request.username;
+                    console.log(`XSpamSweeper: Running AI analysis for @${username}: "${text.substring(0, 50)}..."`);
+
+                    const result = await getSpamInfoWithAI(text);
+                    console.log(`XSpamSweeper: AI analysis complete for @${username}:`, result);
+
+                    sendResponse({
+                        success: true,
+                        username,
+                        spamInfo: result
+                    });
+                } catch (error) {
+                    console.error('XSpamSweeper: AI analysis error:', error);
+                    sendResponse({ success: false, error: error.message });
+                }
+            })();
+            return true;
+        }
+
         if (request.action === 'scrollToLoadAll') {
             scrollToLoadAll().then(sendResponse);
             return true;

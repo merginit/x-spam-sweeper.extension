@@ -29,11 +29,14 @@ const addKeywordBtn = document.getElementById('addKeywordBtn');
 const resetBtn = document.getElementById('resetBtn');
 const saveStatus = document.getElementById('saveStatus');
 const autoLoadAllToggle = document.getElementById('autoLoadAllToggle');
+const aiScanningToggle = document.getElementById('aiScanningToggle');
+const aiStatusIndicator = document.getElementById('aiStatusIndicator');
 
 // Storage keys
 const STORAGE_KEY_URL_PATTERNS = 'customUrlPatterns';
 const STORAGE_KEY_KEYWORDS = 'customKeywords';
 const STORAGE_KEY_AUTO_LOAD_ALL = 'autoLoadAllMessages';
+const STORAGE_KEY_AI_SCANNING = 'aiScanningEnabled';
 
 // Current custom settings
 let customUrlPatterns = [];
@@ -44,11 +47,14 @@ let customKeywords = {};
  */
 async function loadSettings() {
     try {
-        const result = await chrome.storage.sync.get([STORAGE_KEY_URL_PATTERNS, STORAGE_KEY_KEYWORDS, STORAGE_KEY_AUTO_LOAD_ALL]);
+        const result = await chrome.storage.sync.get([STORAGE_KEY_URL_PATTERNS, STORAGE_KEY_KEYWORDS, STORAGE_KEY_AUTO_LOAD_ALL, STORAGE_KEY_AI_SCANNING]);
         customUrlPatterns = result[STORAGE_KEY_URL_PATTERNS] || [];
         customKeywords = result[STORAGE_KEY_KEYWORDS] || {};
         autoLoadAllToggle.checked = result[STORAGE_KEY_AUTO_LOAD_ALL] || false;
+        aiScanningToggle.checked = result[STORAGE_KEY_AI_SCANNING] || false;
         renderAll();
+
+        await checkAndDisplayAIStatus();
     } catch (error) {
         console.error('Failed to load settings:', error);
     }
@@ -356,15 +362,42 @@ function addKeyword() {
  * Reset to defaults
  */
 async function resetToDefaults() {
-    if (!confirm('Reset all custom patterns and keywords? This cannot be undone.')) {
+    if (!confirm('Reset all settings to defaults? This cannot be undone.')) {
         return;
     }
 
+    console.log('XSpamSweeper: Resetting all settings to defaults...');
+
+    // Reset custom patterns and keywords
     customUrlPatterns = [];
     customKeywords = {};
-    await saveSettings();
-    renderAll();
-    showSaveStatus('Reset complete!');
+
+    // Reset toggles to defaults (all off)
+    autoLoadAllToggle.checked = false;
+    aiScanningToggle.checked = false;
+
+    // Save all settings
+    try {
+        const settingsToSave = {
+            [STORAGE_KEY_URL_PATTERNS]: [],
+            [STORAGE_KEY_KEYWORDS]: {},
+            [STORAGE_KEY_AUTO_LOAD_ALL]: false,
+            [STORAGE_KEY_AI_SCANNING]: false
+        };
+        console.log('XSpamSweeper: Saving reset settings:', settingsToSave);
+
+        await chrome.storage.sync.set(settingsToSave);
+
+        // Verify the save worked
+        const verify = await chrome.storage.sync.get([STORAGE_KEY_AUTO_LOAD_ALL, STORAGE_KEY_AI_SCANNING]);
+        console.log('XSpamSweeper: Verified saved settings:', verify);
+
+        renderAll();
+        showSaveStatus('Reset complete!');
+    } catch (error) {
+        console.error('XSpamSweeper: Failed to reset settings:', error);
+        showSaveStatus('Error resetting', true);
+    }
 }
 
 /**
@@ -421,6 +454,88 @@ autoLoadAllToggle.addEventListener('change', async () => {
         showSaveStatus('Error saving', true);
     }
 });
+
+aiScanningToggle.addEventListener('change', async () => {
+    try {
+        await chrome.storage.sync.set({
+            [STORAGE_KEY_AI_SCANNING]: aiScanningToggle.checked
+        });
+        showSaveStatus('Saved!');
+    } catch (error) {
+        console.error('Failed to save AI scanning setting:', error);
+        showSaveStatus('Error saving', true);
+    }
+});
+
+/**
+ * Check AI availability and update the status indicator
+ * Note: Chrome AI API is only available in web page contexts, not in chrome-extension:// URLs
+ * So we can't fully check availability here - we just allow enabling and check in content script
+ */
+async function checkAndDisplayAIStatus() {
+    // Update indicator to "Checking" state
+    aiStatusIndicator.textContent = 'Checking...';
+    aiStatusIndicator.className = 'ai-status checking';
+
+    try {
+        // Get the language model API - try multiple entry points
+        let api = null;
+        let apiSource = '';
+
+        // Try Chrome extension API first (may work in some Chrome versions)
+        if (typeof chrome !== 'undefined' && chrome.aiOriginTrial?.languageModel) {
+            api = chrome.aiOriginTrial.languageModel;
+            apiSource = 'chrome.aiOriginTrial';
+        }
+        // Try standard web API
+        else if (typeof self !== 'undefined' && self.ai?.languageModel) {
+            api = self.ai.languageModel;
+            apiSource = 'self.ai';
+        }
+        // Try window.ai for older implementations
+        else if (typeof window !== 'undefined' && window.ai?.languageModel) {
+            api = window.ai.languageModel;
+            apiSource = 'window.ai';
+        }
+
+        console.log('XSpamSweeper: AI API check:', { apiSource });
+
+        if (!api) {
+            // API not available in extension context - this is expected
+            // User can still enable the toggle, actual check happens in content script
+            console.log('XSpamSweeper: AI API not available in extension context (expected)');
+            aiStatusIndicator.textContent = 'Enable to use on X';
+            aiStatusIndicator.className = 'ai-status checking';
+            aiScanningToggle.disabled = false; // Allow enabling anyway
+            return;
+        }
+
+        const capabilities = await api.capabilities();
+        console.log('XSpamSweeper: AI capabilities:', capabilities);
+
+        if (capabilities.available === 'readily') {
+            aiStatusIndicator.textContent = 'Available ✓';
+            aiStatusIndicator.className = 'ai-status available';
+            aiScanningToggle.disabled = false;
+        } else if (capabilities.available === 'after-download') {
+            aiStatusIndicator.textContent = 'Downloading...';
+            aiStatusIndicator.className = 'ai-status downloading';
+            aiScanningToggle.disabled = false;
+        } else {
+            console.log('XSpamSweeper: AI not available, status:', capabilities.available);
+            aiStatusIndicator.textContent = 'Not Available';
+            aiStatusIndicator.className = 'ai-status unavailable';
+            aiScanningToggle.disabled = false; // Still allow toggle, check happens on X
+        }
+
+    } catch (error) {
+        console.error('XSpamSweeper: AI check failed:', error);
+        // Don't block the toggle on error - actual check happens in content script
+        aiStatusIndicator.textContent = 'Enable to use on X';
+        aiStatusIndicator.className = 'ai-status checking';
+        aiScanningToggle.disabled = false;
+    }
+}
 
 document.addEventListener('DOMContentLoaded', () => {
     addUrlPatternBtn.disabled = true;

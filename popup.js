@@ -191,6 +191,14 @@ function createRequestItem(request) {
         spamBadgeHtml = `<span class="spam-badge low" title="${title}">?</span>`;
     }
 
+    // AI verdict indicator (if AI was used)
+    if (spamInfo.aiReason) {
+        spamBadgeHtml += `<span class="spam-badge ai" title="${escapeHtml(spamInfo.aiReason)}">
+          <svg viewBox="0 0 24 24" fill="currentColor" width="10" height="10"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+          AI
+        </span>`;
+    }
+
     // Hidden link indicator
     let hiddenLinkHtml = '';
     if (spamInfo.isHiddenLink) {
@@ -281,10 +289,10 @@ function renderRequestsList() {
 async function injectContentScript(tabId) {
     try {
         // Inject scripts in the same order as manifest.json:
-        // spam-patterns.js -> shared.js -> content.js
+        // ai-service.js -> spam-patterns.js -> shared.js -> content.js
         await chrome.scripting.executeScript({
             target: { tabId },
-            files: ['spam-patterns.js', 'shared.js', 'content.js']
+            files: ['ai-service.js', 'spam-patterns.js', 'shared.js', 'content.js']
         });
         return true;
     } catch (error) {
@@ -414,9 +422,77 @@ async function fetchMessageRequests() {
             setStatus(`Found ${messageRequests.length} message request${messageRequests.length !== 1 ? 's' : ''}`);
         }
 
+        // Trigger AI analysis for SUS zone messages (async, updates UI when done)
+        runAIAnalysis(tab.id);
+
     } catch (error) {
         console.error('XSpamSweeper: Error fetching requests', error);
         showError('Failed to fetch message requests. Please try again.');
+    }
+}
+
+/**
+ * Run AI analysis on messages in the SUS zone (score 5-19)
+ * This is async and updates the UI as results come in
+ */
+async function runAIAnalysis(tabId) {
+    // Check if AI is enabled in settings
+    try {
+        const settings = await chrome.storage.sync.get(['aiScanningEnabled']);
+        if (!settings.aiScanningEnabled) {
+            console.log('XSpamSweeper: AI scanning disabled in settings');
+            return;
+        }
+    } catch (e) {
+        console.log('XSpamSweeper: Could not check AI setting', e);
+        return;
+    }
+
+    // Find messages in SUS zone (score 5-19, not hidden links)
+    const susMessages = messageRequests.filter(req => {
+        const score = req.spamInfo?.score || 0;
+        const isHidden = req.spamInfo?.isHiddenLink;
+        const riskLevel = req.spamInfo?.riskLevel;
+        // SUS zone: score 5-19, not already HIGH, not hidden link
+        return score >= 5 && score < 20 && riskLevel !== 'high' && !isHidden;
+    });
+
+    if (susMessages.length === 0) {
+        console.log('XSpamSweeper: No messages in SUS zone for AI analysis');
+        return;
+    }
+
+    console.log(`XSpamSweeper: Running AI analysis on ${susMessages.length} SUS zone messages`);
+    setStatus(`AI analyzing ${susMessages.length} suspicious message${susMessages.length !== 1 ? 's' : ''}...`);
+
+    let processedCount = 0;
+
+    for (const msg of susMessages) {
+        try {
+            const response = await chrome.tabs.sendMessage(tabId, {
+                action: 'analyzeWithAI',
+                username: msg.username,
+                text: msg.messagePreview
+            });
+
+            if (response?.success && response.spamInfo) {
+                // Update the message request with AI result
+                const idx = messageRequests.findIndex(r => r.username === msg.username);
+                if (idx !== -1) {
+                    messageRequests[idx].spamInfo = response.spamInfo;
+                    console.log(`XSpamSweeper: AI updated @${msg.username}:`, response.spamInfo);
+                }
+                processedCount++;
+            }
+        } catch (e) {
+            console.warn(`XSpamSweeper: AI analysis failed for @${msg.username}:`, e);
+        }
+    }
+
+    // Re-render if any were updated
+    if (processedCount > 0) {
+        renderRequestsList();
+        setStatus(`AI analyzed ${processedCount} message${processedCount !== 1 ? 's' : ''}`, 'success');
     }
 }
 

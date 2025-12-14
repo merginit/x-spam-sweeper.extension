@@ -64,6 +64,52 @@
         </div>
       </section>
 
+      <!-- AI Detection Settings Section -->
+      <section class="settings-section">
+        <h2>
+          <svg viewBox="0 0 24 24" fill="currentColor">
+            <path
+              d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
+          </svg>
+          AI Spam Detection
+          <span class="experimental-badge">Experimental</span>
+        </h2>
+        <p class="section-desc">Use Chrome's built-in Gemini Nano AI to detect sophisticated spam.</p>
+
+        <div class="info-box warning">
+          <strong>Warning:</strong> The Chrome flags required for AI features are experimental.
+          By enabling them, you could lose browser data or compromise your security or privacy.
+          Enabled flags apply to all users of this browser.
+        </div>
+
+        <div class="info-box">
+          <strong>Requirements:</strong>
+          <ul>
+            <li>Chrome 128+ (138+ recommended)</li>
+            <li>Set <code>chrome://flags/#optimization-guide-on-device-model</code> to <strong>"Enabled
+                BypassPerfRequirement"</strong></li>
+            <li>Set <code>chrome://flags/#prompt-api-for-gemini-nano</code> to <strong>"Enabled"</strong></li>
+            <li>Restart Chrome completely after changing flags</li>
+            <li>~1.5GB model download (check <code>chrome://on-device-internals</code> for status)</li>
+            <li>22GB free disk space, 4GB VRAM (bypassed with flag above)</li>
+          </ul>
+        </div>
+
+        <div class="toggle-setting">
+          <label class="toggle-label" for="aiScanningToggle">
+            <div class="toggle-info">
+              <span class="toggle-title">Enable AI Scanning</span>
+              <span class="toggle-desc">Analyze suspicious messages with Gemini Nano (score 5-19)</span>
+            </div>
+            <span id="aiStatusIndicator" class="ai-status checking">Checking...</span>
+            <div class="toggle-switch">
+              <input type="checkbox" id="aiScanningToggle" />
+              <span class="toggle-slider"></span>
+            </div>
+          </label>
+        </div>
+      </section>
+
       <!-- URL Patterns Section -->
       <section class="settings-section">
         <h2>

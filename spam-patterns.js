@@ -428,6 +428,83 @@ function getSpamInfo(text) {
 }
 
 /**
+ * Get spam info with optional AI enhancement
+ * Async version that consults AI for "SUS zone" messages
+ * @param {string} text - Message text to analyze
+ * @returns {Promise<Object>} Enhanced spam info with optional AI verdict
+ */
+// eslint-disable-next-line no-unused-vars
+async function getSpamInfoWithAI(text) {
+    // 1. Fast path: Get heuristic score first
+    const info = getSpamInfo(text);
+
+    // 2. Check if AI scanning is available
+    const scanWithAIFn = typeof scanWithAI === 'function' ? scanWithAI : null;
+    if (!scanWithAIFn) {
+        return info;
+    }
+
+    // 3. Decision gates - when to skip AI
+
+    // Gate A: Already HIGH risk - no need for AI confirmation
+    if (info.riskLevel === RISK_LEVELS.HIGH) {
+        info.aiSkipped = 'already_high_risk';
+        return info;
+    }
+
+    // Gate B: Very low score - don't bother AI with "hey" messages
+    if (info.score < 5) {
+        info.aiSkipped = 'score_too_low';
+        return info;
+    }
+
+    // Gate C: Hidden link that hasn't been resolved yet
+    if (info.isHiddenLink) {
+        info.aiSkipped = 'hidden_link_unresolved';
+        return info;
+    }
+
+    // 4. SUS zone (score 5-19) - consult AI for verdict
+    info.aiChecked = true;
+
+    try {
+        const aiVerdict = await scanWithAIFn(text);
+
+        if (!aiVerdict) {
+            info.aiSkipped = 'ai_unavailable';
+            return info;
+        }
+
+        info.aiVerdict = aiVerdict;
+
+        // AI says SPAM with high confidence -> Upgrade to HIGH risk
+        if (aiVerdict.isSpam && aiVerdict.confidence > 0.8) {
+            console.log(`XSpamSweeper: AI upgraded score from ${info.score} to HIGH (${aiVerdict.category}: ${aiVerdict.reason})`);
+            info.score = 25;
+            info.riskLevel = RISK_LEVELS.HIGH;
+            info.aiReason = `AI: ${aiVerdict.category} - ${aiVerdict.reason}`;
+        }
+        // AI says SAFE with high confidence -> Downgrade to SAFE
+        else if (!aiVerdict.isSpam && aiVerdict.confidence > 0.8) {
+            console.log(`XSpamSweeper: AI downgraded score from ${info.score} to SAFE (${aiVerdict.reason})`);
+            info.score = 0;
+            info.riskLevel = RISK_LEVELS.SAFE;
+            info.aiReason = `AI cleared: ${aiVerdict.reason}`;
+        }
+        // AI is unsure -> Keep heuristic score
+        else {
+            console.log(`XSpamSweeper: AI uncertain (confidence: ${aiVerdict.confidence}), keeping heuristic score ${info.score}`);
+        }
+
+    } catch (error) {
+        console.warn('XSpamSweeper: AI check failed', error);
+        info.aiSkipped = 'ai_error';
+    }
+
+    return info;
+}
+
+/**
  * Check if message should be auto-flagged for sweep
  * @param {string} text - Message text
  * @returns {boolean}
