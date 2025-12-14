@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.11] - 2025-12-14
+
+### Improved
+- **Hidden Link Extraction**: Background link resolution now runs in a minimized popup window instead of a visible pinned tab. This prevents users from accidentally closing or interacting with the extraction process.
+
+---
+
 ## [0.2.10] - 2025-12-14
 
 ### Improved

@@ -253,6 +253,7 @@ function handleReportIframeAutomation() {
 let linkResolutionQueue = [];
 let isProcessingQueue = false;
 let workerTabId = null;
+let workerWindowId = null;
 
 /**
  * Handle link resolution requests from content script
@@ -285,8 +286,9 @@ chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
 
     if (request.action === 'cancelLinkResolution') {
         linkResolutionQueue = [];
-        if (workerTabId) {
-            chrome.tabs.remove(workerTabId).catch(() => { });
+        if (workerWindowId) {
+            chrome.windows.remove(workerWindowId).catch(() => { });
+            workerWindowId = null;
             workerTabId = null;
         }
         isProcessingQueue = false;
@@ -306,14 +308,25 @@ async function processLinkResolutionQueue() {
     console.log('XSpamSweeper Background: Starting link resolution queue processing');
 
     try {
-        // Create a single worker tab
-        const tab = await chrome.tabs.create({
-            active: false,  // Make visible for debugging
-            pinned: true,
-            url: 'about:blank'
+        // Create a minimized popup window to hide link extraction from user
+        // Using chrome.windows.create + immediate update because state: "minimized" 
+        // has a known Chromium bug where it doesn't work reliably during creation
+        const workerWindow = await chrome.windows.create({
+            url: 'about:blank',
+            type: 'popup',
+            width: 800,
+            height: 600,
+            focused: false
         });
-        workerTabId = tab.id;
-        console.log('XSpamSweeper Background: Created worker tab', workerTabId);
+        workerWindowId = workerWindow.id;
+        workerTabId = workerWindow.tabs[0].id;
+
+        // Immediately minimize the window to hide it from user
+        await chrome.windows.update(workerWindowId, {
+            state: 'minimized',
+            focused: false
+        });
+        console.log('XSpamSweeper Background: Created minimized worker window', workerWindowId, 'with tab', workerTabId);
 
         // First, extract current user's own profile links to filter them out later
         let currentUserDomains = [];
@@ -503,9 +516,10 @@ async function processLinkResolutionQueue() {
             }
         }
 
-        // Cleanup: close worker tab
-        if (workerTabId) {
-            await chrome.tabs.remove(workerTabId).catch(() => { });
+        // Cleanup: close worker window
+        if (workerWindowId) {
+            await chrome.windows.remove(workerWindowId).catch(() => { });
+            workerWindowId = null;
             workerTabId = null;
         }
 
@@ -513,6 +527,7 @@ async function processLinkResolutionQueue() {
         console.error('XSpamSweeper Background: Queue processing error:', error);
     } finally {
         isProcessingQueue = false;
+        workerWindowId = null;
         workerTabId = null;
     }
 }
