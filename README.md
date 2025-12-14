@@ -13,6 +13,13 @@
 
 <br />
 
+<div align="center">
+    <img src="./assets/preview.png" alt="X Spam Sweeper main interface" width="45%" />
+    <img src="./assets/preview-error.png" alt="X Spam Sweeper error state display" width="45%" />
+</div>
+
+<br />
+
 ## Screenshots
 
 ### Popup Interface
@@ -24,7 +31,9 @@
 </div>
 
 <p align="center">
-    <em>Left: Message requests list with spam risk indicators | Center: Multi-select for batch processing | Right: Actions dropdown menu</em>
+    <em>Left: Message requests list with spam risk indicators<br />
+    Center: Multi-select for batch processing<br />
+    Right: Actions dropdown menu</em>
 </p>
 
 ### Settings Page
@@ -35,15 +44,9 @@
 </div>
 
 <p align="center">
-    <em>Left: General settings and experimental AI spam detection | Right: Custom URL patterns and keyword configuration</em>
+    <em>Left: General settings and experimental AI spam detection<br />
+    Right: Custom URL patterns and keyword configuration</em>
 </p>
-
-### Error Handling
-
-<div align="center">
-    <img src="./assets/preview.png" alt="X Spam Sweeper main interface" width="45%" />
-    <img src="./assets/preview-error.png" alt="X Spam Sweeper error state display" width="45%" />
-</div>
 
 ## Why X Spam Sweeper?
 
