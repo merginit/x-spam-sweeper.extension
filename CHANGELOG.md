@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.14] - 2025-12-14
+
+### Fixed
+- **Multi-Frame Script Error**: Fixed "Identifier "customUrlPatterns" has already been declared" error that occurred when content scripts were injected into multiple iframes on the same page. Changed variable declarations to use guard pattern with `var` to allow safe re-injection.
+
+---
+
 ## [0.2.13] - 2025-12-14
 
 ### Added

@@ -21,8 +21,11 @@
 // =============================================================================
 
 // Custom patterns loaded from chrome.storage.sync
-let customUrlPatterns = [];
-let customKeywords = {};
+// Guard to prevent redeclaration in multi-frame contexts
+// eslint-disable-next-line no-var
+var customUrlPatterns = customUrlPatterns || [];
+// eslint-disable-next-line no-var
+var customKeywords = customKeywords || {};
 
 /**
  * Initialize custom patterns from storage
