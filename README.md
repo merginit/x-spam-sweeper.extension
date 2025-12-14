@@ -22,7 +22,7 @@
 
 ## Screenshots
 
-### Popup Interface
+<h3 align="center">Popup Interface</h3>
 
 <div align="center">
     <img src="./assets/popup--message-list.png" alt="Popup showing message requests with spam risk indicators (SPAM, SUS badges)" width="30%" />
@@ -36,7 +36,7 @@
     Right: Actions dropdown menu</em>
 </p>
 
-### Settings Page
+<h3 align="center">Settings Page</h3>
 
 <div align="center">
     <img src="./assets/settings--ai-detection.png" alt="Settings page with General Settings and AI Spam Detection using Chrome's Gemini Nano" width="45%" />
