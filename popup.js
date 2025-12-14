@@ -274,17 +274,20 @@ function renderRequestsList() {
 }
 
 /**
- * Inject content script into the tab
+ * Inject content scripts into the tab
+ * Must inject all scripts in the same order as manifest.json
  */
 async function injectContentScript(tabId) {
     try {
+        // Inject scripts in the same order as manifest.json:
+        // spam-patterns.js -> shared.js -> content.js
         await chrome.scripting.executeScript({
             target: { tabId },
-            files: ['content.js']
+            files: ['spam-patterns.js', 'shared.js', 'content.js']
         });
         return true;
     } catch (error) {
-        console.error('XSpamSweeper: Failed to inject content script', error);
+        console.error('XSpamSweeper: Failed to inject content scripts', error);
         return false;
     }
 }

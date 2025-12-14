@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.12] - 2025-12-14
+
+### Fixed
+- **Script Injection on First Load**: Manual script injection now loads all dependencies (`spam-patterns.js`, `shared.js`, `content.js`) in the correct order. Previously, only `content.js` was injected, causing spam detection to fail until page reload.
+
+---
+
 ## [0.2.11] - 2025-12-14
 
 ### Improved
