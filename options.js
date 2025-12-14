@@ -28,10 +28,12 @@ const newKeywordWeightDown = document.getElementById('newKeywordWeightDown');
 const addKeywordBtn = document.getElementById('addKeywordBtn');
 const resetBtn = document.getElementById('resetBtn');
 const saveStatus = document.getElementById('saveStatus');
+const autoLoadAllToggle = document.getElementById('autoLoadAllToggle');
 
 // Storage keys
 const STORAGE_KEY_URL_PATTERNS = 'customUrlPatterns';
 const STORAGE_KEY_KEYWORDS = 'customKeywords';
+const STORAGE_KEY_AUTO_LOAD_ALL = 'autoLoadAllMessages';
 
 // Current custom settings
 let customUrlPatterns = [];
@@ -42,9 +44,10 @@ let customKeywords = {};
  */
 async function loadSettings() {
     try {
-        const result = await chrome.storage.sync.get([STORAGE_KEY_URL_PATTERNS, STORAGE_KEY_KEYWORDS]);
+        const result = await chrome.storage.sync.get([STORAGE_KEY_URL_PATTERNS, STORAGE_KEY_KEYWORDS, STORAGE_KEY_AUTO_LOAD_ALL]);
         customUrlPatterns = result[STORAGE_KEY_URL_PATTERNS] || [];
         customKeywords = result[STORAGE_KEY_KEYWORDS] || {};
+        autoLoadAllToggle.checked = result[STORAGE_KEY_AUTO_LOAD_ALL] || false;
         renderAll();
     } catch (error) {
         console.error('Failed to load settings:', error);
@@ -406,6 +409,18 @@ newKeywordWeightInput.addEventListener('blur', () => {
 });
 
 resetBtn.addEventListener('click', resetToDefaults);
+
+autoLoadAllToggle.addEventListener('change', async () => {
+    try {
+        await chrome.storage.sync.set({
+            [STORAGE_KEY_AUTO_LOAD_ALL]: autoLoadAllToggle.checked
+        });
+        showSaveStatus('Saved!');
+    } catch (error) {
+        console.error('Failed to save auto-load setting:', error);
+        showSaveStatus('Error saving', true);
+    }
+});
 
 document.addEventListener('DOMContentLoaded', () => {
     addUrlPatternBtn.disabled = true;

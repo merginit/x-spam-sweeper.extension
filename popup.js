@@ -39,6 +39,7 @@ const submenu = document.getElementById('submenu');
 const refreshBtn = document.getElementById('refreshBtn');
 const resolveLinksBtn = document.getElementById('resolveLinksBtn');
 const filterToggleBtn = document.getElementById('filterToggleBtn');
+const loadAllBtn = document.getElementById('loadAllBtn');
 const goToRequestsBtn = document.getElementById('goToRequestsBtn');
 const statusBar = document.getElementById('status');
 
@@ -690,6 +691,39 @@ async function loadFilterPreference() {
 
 filterToggleBtn?.addEventListener('click', toggleFilter);
 
+/**
+ * Load all messages by scrolling the page
+ */
+async function loadAllMessages() {
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    if (!tab) {
+        setStatus('No active tab found', 'error');
+        return;
+    }
+
+    setStatus('Loading all messages...');
+    loadAllBtn.disabled = true;
+
+    try {
+        const response = await chrome.tabs.sendMessage(tab.id, { action: 'scrollToLoadAll' });
+
+        if (response?.success) {
+            setStatus(response.message, 'success');
+            // Refresh to show all loaded messages
+            await fetchMessageRequests();
+        } else {
+            setStatus(response?.message || 'Failed to load messages', 'error');
+        }
+    } catch (error) {
+        console.error('XSpamSweeper: Load all error:', error);
+        setStatus('Error loading messages', 'error');
+    } finally {
+        loadAllBtn.disabled = false;
+    }
+}
+
+loadAllBtn?.addEventListener('click', loadAllMessages);
+
 // Listen for DOM updates from content script (scrolling, navigation)
 chrome.runtime.onMessage.addListener((request, _sender, _sendResponse) => {
     if (request.action === 'domUpdated') {
@@ -725,4 +759,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
     await loadFilterPreference();
     await fetchMessageRequests();
+
+    // Check if auto-load all messages is enabled
+    try {
+        const settings = await chrome.storage.sync.get(['autoLoadAllMessages']);
+        if (settings.autoLoadAllMessages) {
+            console.log('XSpamSweeper: Auto-load all messages enabled, starting...');
+            await loadAllMessages();
+        }
+    } catch (e) {
+        console.log('XSpamSweeper: Could not check auto-load setting', e);
+    }
 });

@@ -137,6 +137,68 @@
     }
 
     /**
+     * Scroll to load all messages from the list
+     * Keeps scrolling until no new items appear
+     * @returns {Promise<{success: boolean, totalLoaded: number, message: string}>}
+     */
+    async function scrollToLoadAll() {
+        if (!isOnMessageRequestsPage()) {
+            return { success: false, totalLoaded: 0, message: 'Not on message requests page' };
+        }
+
+        // Find the scrollable container
+        const scrollContainer = document.querySelector('[aria-label*="Timeline"][aria-label*="messages"]')
+            || document.querySelector('section[role="region"] [role="tablist"]')?.parentElement
+            || document.querySelector('[data-testid="primaryColumn"] section');
+        if (!scrollContainer) {
+            return { success: false, totalLoaded: 0, message: 'Could not find scroll container' };
+        }
+
+        let lastCount = 0;
+        let stableIterations = 0;
+        const maxStableIterations = 3; // Stop after 3 iterations with no new items
+        const maxTotalIterations = 100; // Safety limit
+        let iteration = 0;
+
+        console.log('XSpamSweeper: Starting auto-scroll to load all messages...');
+
+        while (iteration < maxTotalIterations) {
+            const currentCount = document.querySelectorAll('div[data-testid="cellInnerDiv"]').length;
+            console.log(`XSpamSweeper: Scroll iteration ${iteration + 1}, items: ${currentCount}`);
+
+            if (currentCount === lastCount) {
+                stableIterations++;
+                if (stableIterations >= maxStableIterations) {
+                    console.log(`XSpamSweeper: No new items after ${maxStableIterations} scrolls, done.`);
+                    break;
+                }
+            } else {
+                stableIterations = 0;
+                lastCount = currentCount;
+            }
+
+            // Scroll to bottom
+            scrollContainer.scrollTo({
+                top: scrollContainer.scrollHeight,
+                behavior: 'smooth'
+            });
+
+            // Wait for new items to load
+            await new Promise(resolve => setTimeout(resolve, 800));
+            iteration++;
+        }
+
+        const finalCount = document.querySelectorAll('div[data-testid="cellInnerDiv"]').length;
+        console.log(`XSpamSweeper: Finished loading ${finalCount} total items`);
+
+        return {
+            success: true,
+            totalLoaded: finalCount,
+            message: `Loaded ${finalCount} message${finalCount !== 1 ? 's' : ''}`
+        };
+    }
+
+    /**
      * Check if we're on the message requests page
      * @returns {boolean}
      */
@@ -437,6 +499,11 @@
 
         if (request.action === 'ping') {
             sendResponse({ success: true, onRequestsPage: isOnMessageRequestsPage() });
+            return true;
+        }
+
+        if (request.action === 'scrollToLoadAll') {
+            scrollToLoadAll().then(sendResponse);
             return true;
         }
 

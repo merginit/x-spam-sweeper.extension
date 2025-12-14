@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.13] - 2025-12-14
+
+### Added
+- **Load All Messages**: New feature to automatically scroll and load all message requests before displaying them.
+  - **Settings Toggle**: Enable "Auto-load all messages" in the Options page to trigger on popup open (disabled by default).
+  - **Manual Button**: Click the download icon in the popup header to load all messages on demand.
+  - Prevents need to manually scroll through long message request lists.
+
+---
+
 ## [0.2.12] - 2025-12-14
 
 ### Fixed
