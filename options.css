@@ -130,7 +130,7 @@ header .logo {
 /* Editable text styling */
 .pattern-item .pattern-text,
 .keyword-item .keyword-text {
-    cursor: pointer;
+    cursor: text;
     transition: background 0.15s;
     padding: 4px 6px;
     border-radius: 4px;
@@ -152,25 +152,70 @@ header .logo {
     outline: 1px solid var(--accent);
 }
 
-.keyword-item .keyword-weight-input {
-    width: 50px;
+.number-input-wrapper {
+    display: flex;
+    align-items: center;
+    margin-left: 8px;
+    margin-right: 12px;
     height: 24px;
-    background: var(--bg-primary);
     border: 1px solid var(--border);
     border-radius: 4px;
-    padding: 0 6px;
+    overflow: hidden;
+    background: var(--bg-primary);
+}
+
+.number-input-wrapper .spin-btn {
+    width: 20px;
+    height: 22px;
+    background: var(--bg-tertiary);
+    border: none;
+    color: var(--text-secondary);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+    user-select: none;
+}
+
+.number-input-wrapper .spin-btn:hover {
+    background: var(--accent);
+    color: white;
+}
+
+.number-input-wrapper .spin-btn:active {
+    background: var(--accent-hover);
+}
+
+.keyword-item .keyword-weight-input {
+    width: 30px;
+    height: 22px;
+    background: var(--bg-primary);
+    border: none;
+    border-left: 1px solid var(--border);
+    border-right: 1px solid var(--border);
+    padding: 0;
     color: var(--text-primary);
     font-size: 12px;
     font-weight: 600;
     text-align: center;
-    margin-left: 8px;
-    margin-right: 12px;
     box-sizing: border-box;
+    -webkit-appearance: textfield;
+    -moz-appearance: textfield;
+    appearance: textfield;
+}
+
+.keyword-item .keyword-weight-input::-webkit-outer-spin-button,
+.keyword-item .keyword-weight-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    appearance: none;
+    margin: 0;
 }
 
 .keyword-item .keyword-weight-input:focus {
     outline: none;
-    border-color: var(--accent);
 }
 
 .pattern-item .remove-btn,
@@ -224,20 +269,41 @@ header .logo {
     border-color: var(--accent);
 }
 
-.add-form input[type="number"] {
-    width: 60px;
-    background: var(--bg-tertiary);
-    border: 1px solid var(--border);
+.add-form .number-input-wrapper {
+    height: 40px;
     border-radius: 8px;
-    padding: 10px;
+}
+
+.add-form .number-input-wrapper .spin-btn {
+    width: 32px;
+    height: 38px;
+    font-size: 18px;
+}
+
+.add-form .number-input-wrapper input[type="number"] {
+    width: 40px;
+    height: 38px;
+    background: var(--bg-tertiary);
+    border: none;
+    border-left: 1px solid var(--border);
+    border-right: 1px solid var(--border);
     color: var(--text-primary);
     font-size: 14px;
     text-align: center;
+    appearance: textfield;
+    -moz-appearance: textfield;
+    -webkit-appearance: textfield;
 }
 
-.add-form input[type="number"]:focus {
+.add-form .number-input-wrapper input[type="number"]::-webkit-outer-spin-button,
+.add-form .number-input-wrapper input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    appearance: none;
+    margin: 0;
+}
+
+.add-form .number-input-wrapper input[type="number"]:focus {
     outline: none;
-    border-color: var(--accent);
 }
 
 /* Buttons */
@@ -251,12 +317,17 @@ header .logo {
     transition: all 0.15s;
 }
 
+.btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
 .btn-primary {
     background: var(--accent);
     color: white;
 }
 
-.btn-primary:hover {
+.btn-primary:hover:not(:disabled) {
     background: var(--accent-hover);
 }
 

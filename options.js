@@ -23,6 +23,8 @@ const newUrlPatternInput = document.getElementById('newUrlPattern');
 const addUrlPatternBtn = document.getElementById('addUrlPatternBtn');
 const newKeywordInput = document.getElementById('newKeyword');
 const newKeywordWeightInput = document.getElementById('newKeywordWeight');
+const newKeywordWeightUp = document.getElementById('newKeywordWeightUp');
+const newKeywordWeightDown = document.getElementById('newKeywordWeightDown');
 const addKeywordBtn = document.getElementById('addKeywordBtn');
 const resetBtn = document.getElementById('resetBtn');
 const saveStatus = document.getElementById('saveStatus');
@@ -111,14 +113,10 @@ function renderUrlPatterns() {
 
     urlPatternsList.querySelectorAll('.pattern-text').forEach(span => {
         span.addEventListener('click', () => {
-            span.contentEditable = 'true';
-            span.focus();
-            // Select all text
-            const range = document.createRange();
-            range.selectNodeContents(span);
-            const sel = window.getSelection();
-            sel.removeAllRanges();
-            sel.addRange(range);
+            if (span.contentEditable !== 'true') {
+                span.contentEditable = 'true';
+                span.focus();
+            }
         });
 
         span.addEventListener('blur', () => {
@@ -192,7 +190,11 @@ function renderKeywords() {
         item.className = 'keyword-item';
         item.innerHTML = `
             <span class="keyword-text" data-keyword="${escapeHtml(keyword)}" contenteditable="false" title="Click to edit">${escapeHtml(keyword)}</span>
-            <input type="number" class="keyword-weight-input" data-keyword="${escapeHtml(keyword)}" min="1" max="10" value="${weight}" title="Click to edit weight">
+            <div class="number-input-wrapper">
+                <button type="button" class="spin-btn spin-down" data-keyword="${escapeHtml(keyword)}">−</button>
+                <input type="number" class="keyword-weight-input" data-keyword="${escapeHtml(keyword)}" min="1" max="10" value="${weight}">
+                <button type="button" class="spin-btn spin-up" data-keyword="${escapeHtml(keyword)}">+</button>
+            </div>
             <button class="remove-btn" data-keyword="${escapeHtml(keyword)}" title="Remove">
                 <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16">
                     <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
@@ -204,14 +206,10 @@ function renderKeywords() {
 
     keywordWeightsList.querySelectorAll('.keyword-text').forEach(span => {
         span.addEventListener('click', () => {
-            span.contentEditable = 'true';
-            span.focus();
-            // Select all text
-            const range = document.createRange();
-            range.selectNodeContents(span);
-            const sel = window.getSelection();
-            sel.removeAllRanges();
-            sel.addRange(range);
+            if (span.contentEditable !== 'true') {
+                span.contentEditable = 'true';
+                span.focus();
+            }
         });
 
         span.addEventListener('blur', () => {
@@ -259,6 +257,24 @@ function renderKeywords() {
             const newWeight = Math.min(10, Math.max(1, parseInt(input.value) || 1));
             input.value = newWeight;
             customKeywords[keyword] = newWeight;
+            saveSettings();
+        });
+    });
+
+    keywordWeightsList.querySelectorAll('.spin-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const keyword = btn.dataset.keyword;
+            const input = keywordWeightsList.querySelector(`.keyword-weight-input[data-keyword="${keyword}"]`);
+            let value = parseInt(input.value) || 1;
+
+            if (btn.classList.contains('spin-up')) {
+                value = Math.min(10, value + 1);
+            } else {
+                value = Math.max(1, value - 1);
+            }
+
+            input.value = value;
+            customKeywords[keyword] = value;
             saveSettings();
         });
     });
@@ -362,13 +378,37 @@ addUrlPatternBtn.addEventListener('click', addUrlPattern);
 newUrlPatternInput.addEventListener('keypress', (e) => {
     if (e.key === 'Enter') addUrlPattern();
 });
+newUrlPatternInput.addEventListener('input', () => {
+    addUrlPatternBtn.disabled = !newUrlPatternInput.value.trim();
+});
 
 addKeywordBtn.addEventListener('click', addKeyword);
 newKeywordInput.addEventListener('keypress', (e) => {
     if (e.key === 'Enter') addKeyword();
 });
+newKeywordInput.addEventListener('input', () => {
+    addKeywordBtn.disabled = !newKeywordInput.value.trim();
+});
+
+newKeywordWeightUp.addEventListener('click', () => {
+    let value = parseInt(newKeywordWeightInput.value) || 1;
+    newKeywordWeightInput.value = Math.min(10, value + 1);
+});
+
+newKeywordWeightDown.addEventListener('click', () => {
+    let value = parseInt(newKeywordWeightInput.value) || 1;
+    newKeywordWeightInput.value = Math.max(1, value - 1);
+});
+
+newKeywordWeightInput.addEventListener('blur', () => {
+    let value = parseInt(newKeywordWeightInput.value) || 1;
+    newKeywordWeightInput.value = Math.min(10, Math.max(1, value));
+});
 
 resetBtn.addEventListener('click', resetToDefaults);
 
-// Initialize
-document.addEventListener('DOMContentLoaded', loadSettings);
+document.addEventListener('DOMContentLoaded', () => {
+    addUrlPatternBtn.disabled = true;
+    addKeywordBtn.disabled = true;
+    loadSettings();
+});

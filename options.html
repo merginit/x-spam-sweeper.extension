@@ -73,7 +73,11 @@
 
         <div class="add-form">
           <input type="text" id="newKeyword" placeholder="e.g. free money" />
-          <input type="number" id="newKeywordWeight" min="1" max="10" value="3" />
+          <div class="number-input-wrapper add-form-spinner">
+            <button type="button" class="spin-btn spin-down" id="newKeywordWeightDown">−</button>
+            <input type="number" id="newKeywordWeight" min="1" max="10" value="3" />
+            <button type="button" class="spin-btn spin-up" id="newKeywordWeightUp">+</button>
+          </div>
           <button id="addKeywordBtn" class="btn btn-primary">Add</button>
         </div>
       </section>

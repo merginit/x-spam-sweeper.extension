@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.9] - 2025-12-14
+
+### Improved
+- **Settings UI Polish**:
+  - **Disabled Add Buttons**: Add buttons are now disabled when input fields are empty.
+  - **Normal Text Editing**: Editable text fields now behave like standard text inputs (cursor placement on click, no auto-select).
+  - **Number Input Spinners**: Always-visible up/down spinners on number inputs, styled to match the dark theme.
+
+---
+
 ## [0.2.8] - 2025-12-14
 
 ### Improved
