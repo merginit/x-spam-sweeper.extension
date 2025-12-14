@@ -99,14 +99,69 @@ function renderUrlPatterns() {
         const item = document.createElement('div');
         item.className = 'pattern-item';
         item.innerHTML = `
-            <span class="pattern-text">${escapeHtml(pattern)}</span>
+            <span class="pattern-text" data-index="${index}" contenteditable="false" title="Click to edit">${escapeHtml(pattern)}</span>
             <button class="remove-btn" data-index="${index}" title="Remove">
                 <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16">
-                    <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                    <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
                 </svg>
             </button>
         `;
         urlPatternsList.appendChild(item);
+    });
+
+    urlPatternsList.querySelectorAll('.pattern-text').forEach(span => {
+        span.addEventListener('click', () => {
+            span.contentEditable = 'true';
+            span.focus();
+            // Select all text
+            const range = document.createRange();
+            range.selectNodeContents(span);
+            const sel = window.getSelection();
+            sel.removeAllRanges();
+            sel.addRange(range);
+        });
+
+        span.addEventListener('blur', () => {
+            span.contentEditable = 'false';
+            const index = parseInt(span.dataset.index);
+            const newValue = span.textContent.trim().toLowerCase();
+
+            if (!newValue) {
+                // If empty, restore original value
+                span.textContent = customUrlPatterns[index];
+                return;
+            }
+
+            // Validate as domain or URL
+            if (!isValidDomainOrUrl(newValue)) {
+                showSaveStatus('Invalid domain/URL format', true);
+                span.textContent = customUrlPatterns[index];
+                return;
+            }
+
+            if (newValue !== customUrlPatterns[index]) {
+                // Check for duplicates
+                if (customUrlPatterns.includes(newValue)) {
+                    showSaveStatus('Pattern already exists', true);
+                    span.textContent = customUrlPatterns[index];
+                    return;
+                }
+                customUrlPatterns[index] = newValue;
+                saveSettings();
+            }
+        });
+
+        span.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                span.blur();
+            }
+            if (e.key === 'Escape') {
+                const index = parseInt(span.dataset.index);
+                span.textContent = customUrlPatterns[index];
+                span.blur();
+            }
+        });
     });
 
     // Add remove handlers
@@ -136,18 +191,78 @@ function renderKeywords() {
         const item = document.createElement('div');
         item.className = 'keyword-item';
         item.innerHTML = `
-            <span class="keyword-text">${escapeHtml(keyword)}</span>
-            <span class="keyword-weight">${weight}</span>
+            <span class="keyword-text" data-keyword="${escapeHtml(keyword)}" contenteditable="false" title="Click to edit">${escapeHtml(keyword)}</span>
+            <input type="number" class="keyword-weight-input" data-keyword="${escapeHtml(keyword)}" min="1" max="10" value="${weight}" title="Click to edit weight">
             <button class="remove-btn" data-keyword="${escapeHtml(keyword)}" title="Remove">
                 <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16">
-                    <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                    <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
                 </svg>
             </button>
         `;
         keywordWeightsList.appendChild(item);
     });
 
-    // Add remove handlers
+    keywordWeightsList.querySelectorAll('.keyword-text').forEach(span => {
+        span.addEventListener('click', () => {
+            span.contentEditable = 'true';
+            span.focus();
+            // Select all text
+            const range = document.createRange();
+            range.selectNodeContents(span);
+            const sel = window.getSelection();
+            sel.removeAllRanges();
+            sel.addRange(range);
+        });
+
+        span.addEventListener('blur', () => {
+            span.contentEditable = 'false';
+            const oldKeyword = span.dataset.keyword;
+            const newKeyword = span.textContent.trim().toLowerCase();
+
+            if (!newKeyword) {
+                // If empty, restore original value
+                span.textContent = oldKeyword;
+                return;
+            }
+
+            if (newKeyword !== oldKeyword) {
+                // Check for duplicates
+                if (customKeywords[newKeyword]) {
+                    showSaveStatus('Keyword already exists', true);
+                    span.textContent = oldKeyword;
+                    return;
+                }
+                // Transfer weight to new keyword and delete old
+                const weight = customKeywords[oldKeyword];
+                delete customKeywords[oldKeyword];
+                customKeywords[newKeyword] = weight;
+                saveSettings();
+                renderKeywords();
+            }
+        });
+
+        span.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                span.blur();
+            }
+            if (e.key === 'Escape') {
+                span.textContent = span.dataset.keyword;
+                span.blur();
+            }
+        });
+    });
+
+    keywordWeightsList.querySelectorAll('.keyword-weight-input').forEach(input => {
+        input.addEventListener('change', () => {
+            const keyword = input.dataset.keyword;
+            const newWeight = Math.min(10, Math.max(1, parseInt(input.value) || 1));
+            input.value = newWeight;
+            customKeywords[keyword] = newWeight;
+            saveSettings();
+        });
+    });
+
     keywordWeightsList.querySelectorAll('.remove-btn').forEach(btn => {
         btn.addEventListener('click', () => {
             const keyword = btn.dataset.keyword;
@@ -159,6 +274,19 @@ function renderKeywords() {
 }
 
 /**
+ * Validate if input is a valid domain or URL
+ */
+function isValidDomainOrUrl(input) {
+    // Domain pattern: allows subdomains, domain name, and TLD
+    const domainPattern = /^([a-z0-9]([a-z0-9-]*[a-z0-9])?\.)+[a-z]{2,}$/i;
+
+    // URL pattern: optional protocol, domain, optional path
+    const urlPattern = /^(https?:\/\/)?([a-z0-9]([a-z0-9-]*[a-z0-9])?\.)+[a-z]{2,}(\/[^\s]*)?$/i;
+
+    return domainPattern.test(input) || urlPattern.test(input);
+}
+
+/**
  * Add new URL pattern
  */
 function addUrlPattern() {
@@ -166,7 +294,13 @@ function addUrlPattern() {
 
     if (!pattern) return;
 
-    // Basic validation 
+    // Validate domain or URL format
+    if (!isValidDomainOrUrl(pattern)) {
+        showSaveStatus('Enter a valid domain (e.g. spam.com) or URL', true);
+        return;
+    }
+
+    // Check for duplicates
     if (customUrlPatterns.includes(pattern)) {
         showSaveStatus('Pattern already exists', true);
         return;

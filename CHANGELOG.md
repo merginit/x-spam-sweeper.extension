@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.8] - 2025-12-14
+
+### Improved
+- **Settings UI Enhancements**:
+  - **Domain/URL Validation**: URL pattern input now validates that entries are valid domains (e.g. `spam.com`) or URLs. Invalid formats are rejected with an error message.
+  - **Editable Entries**: Click on any pattern or keyword text to edit it inline. Press Enter to save or Escape to cancel. Changes are automatically validated and persisted.
+  - **Editable Scores**: Keyword weights are now editable number inputs instead of static text. Click to change the score directly.
+  - **Better Delete Icons**: Replaced the X icon with a properly centered trash icon for better visual alignment.
+  - **Improved Spacing**: Added proper spacing between score badges and delete buttons for cleaner layout.
+
+---
+
 ## [0.2.7] - 2025-12-14
 
 ### Improved

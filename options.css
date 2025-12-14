@@ -127,14 +127,50 @@ header .logo {
     font-family: monospace;
 }
 
-.keyword-item .keyword-weight {
-    background: var(--accent);
-    color: white;
-    padding: 2px 8px;
+/* Editable text styling */
+.pattern-item .pattern-text,
+.keyword-item .keyword-text {
+    cursor: pointer;
+    transition: background 0.15s;
+    padding: 4px 6px;
     border-radius: 4px;
+    height: 24px;
+    line-height: 16px;
+    display: inline-flex;
+    align-items: center;
+    box-sizing: border-box;
+}
+
+.pattern-item .pattern-text:hover,
+.keyword-item .keyword-text:hover {
+    background: var(--bg-primary);
+}
+
+.pattern-item .pattern-text[contenteditable="true"],
+.keyword-item .keyword-text[contenteditable="true"] {
+    background: var(--bg-primary);
+    outline: 1px solid var(--accent);
+}
+
+.keyword-item .keyword-weight-input {
+    width: 50px;
+    height: 24px;
+    background: var(--bg-primary);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 0 6px;
+    color: var(--text-primary);
     font-size: 12px;
     font-weight: 600;
+    text-align: center;
     margin-left: 8px;
+    margin-right: 12px;
+    box-sizing: border-box;
+}
+
+.keyword-item .keyword-weight-input:focus {
+    outline: none;
+    border-color: var(--accent);
 }
 
 .pattern-item .remove-btn,
@@ -143,9 +179,17 @@ header .logo {
     border: none;
     color: var(--text-secondary);
     cursor: pointer;
+    width: 24px;
+    height: 24px;
     padding: 4px;
+    margin-left: 12px;
     border-radius: 4px;
     transition: all 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    box-sizing: border-box;
 }
 
 .pattern-item .remove-btn:hover,
