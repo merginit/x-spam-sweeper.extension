@@ -13,9 +13,36 @@
 
 <br />
 
+## Screenshots
+
+### Popup Interface
+
 <div align="center">
-    <img src="./assets/preview.png" alt="X Spam Sweeper Preview" width="45%" />
-    <img src="./assets/preview-error.png" alt="X Spam Sweeper Error Preview" width="45%" />
+    <img src="./assets/popup--message-list.png" alt="Popup showing message requests with spam risk indicators (SPAM, SUS badges)" width="30%" />
+    <img src="./assets/popup--selection.png" alt="Popup with multiple spam accounts selected for batch processing" width="30%" />
+    <img src="./assets/popup--actions-menu.png" alt="Popup dropdown menu showing Delete, Block, and Report actions" width="30%" />
+</div>
+
+<p align="center">
+    <em>Left: Message requests list with spam risk indicators | Center: Multi-select for batch processing | Right: Actions dropdown menu</em>
+</p>
+
+### Settings Page
+
+<div align="center">
+    <img src="./assets/settings--ai-detection.png" alt="Settings page with General Settings and AI Spam Detection using Chrome's Gemini Nano" width="45%" />
+    <img src="./assets/settings--custom-patterns.png" alt="Settings page for adding custom high-risk URL patterns and spam keywords with weights" width="45%" />
+</div>
+
+<p align="center">
+    <em>Left: General settings and experimental AI spam detection | Right: Custom URL patterns and keyword configuration</em>
+</p>
+
+### Error Handling
+
+<div align="center">
+    <img src="./assets/preview.png" alt="X Spam Sweeper main interface" width="45%" />
+    <img src="./assets/preview-error.png" alt="X Spam Sweeper error state display" width="45%" />
 </div>
 
 ## Why X Spam Sweeper?
