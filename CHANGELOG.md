@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.4] - 2026-01-09
+
+### Added
+- **Dynamic Regex Pattern Detection**: Number-based spam phrases now use flexible regex instead of static strings, catching variants:
+  - Crypto multipliers: `100x`, `500x`, `1000x` → any `Nx` pattern
+  - Percentage returns: `8875.5% returns`, `200%-300% upside` → any percentage + returns/upside/profit/gains
+  - Time-limited FOMO: `next 24h`, `next 15 minutes`, `free for 24 hours` → any time duration
+  - First N spots: `first 150`, `first 50 members` → any "first N" pattern
+  - Stock trade records: `buy:6.419`, `sell:10.025` → any buy/sell price format
+  - DM triggers: `DM me 1 word`, `dm me one word` → flexible word count
+  - Countdown triggers: `in 8 sec`, `in 5 seconds` → any countdown format
+
+### Changed
+- Moved hardcoded number patterns from static keywords to dynamic regex matching.
+
+---
+
 ## [0.3.3] - 2026-01-09
 
 ### Added

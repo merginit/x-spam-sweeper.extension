@@ -210,8 +210,7 @@ const SPAM_KEYWORD_WEIGHTS = {
     'investment': 3,
     'invest': 3,
     'profit': 3,
-    '100x': 5,
-    '1000x': 5,
+
     'guaranteed': 4,
     'passive income': 4,
     'financial freedom': 3,
@@ -374,12 +373,8 @@ const SPAM_KEYWORD_WEIGHTS = {
     'reaching out from a backup': 4,
 
     // FOMO/Urgency scam tactics (weight: 3-5)
-    'for the next 24h': 4,
-    'next 24 hours': 4,
-    'next 15 minutes': 5,
     'till midnight': 4,
     'until midnight': 4,
-    'first 150': 4,
     'limited verification': 4,
     'free verification phase': 5,
     'direct path to': 3,
@@ -406,9 +401,6 @@ const SPAM_KEYWORD_WEIGHTS = {
     'exclusive investment': 4,
     'exclusive report': 3,
     'way better than researching': 4,
-    'buy:': 3,
-    'sell:': 3,
-    'upside': 2,
 
     // Fake intimacy/Romance hooks (weight: 2-4)
     'hey cutie': 2,
@@ -471,6 +463,35 @@ const SPAM_KEYWORD_WEIGHTS = {
     'don\'t dare stop': 3,
     'still here still soft': 3,
 };
+
+/**
+ * Regex-based spam patterns for dynamic number matching
+ * Each entry: [regex, weight, name]
+ */
+const SPAM_REGEX_PATTERNS = [
+    // Crypto multiplier claims (100x, 1000x, etc.)
+    [/\b\d+x\b/gi, 5, 'multiplier claim'],
+
+    // Percentage return claims (e.g., "8875.5% returns", "200%-300% upside")
+    [/\b\d+(?:\.\d+)?%(?:\s*[-–]\s*\d+(?:\.\d+)?%)?\s*(?:returns?|upside|profit|gains?)/gi, 5, 'percentage returns'],
+
+    // Time-limited FOMO ("for the next 24h", "next 15 minutes", "free for 24 hours")
+    [/(?:for the )?next\s+\d+\s*(?:h(?:ours?)?|min(?:utes?)?|days?)/gi, 4, 'time-limited offer'],
+    [/free\s+(?:for\s+)?\d+\s*(?:h(?:ours?)?|min(?:utes?)?|days?)/gi, 4, 'free time-limited'],
+
+    // First N people/spots ("first 150", "first 50 members")
+    [/\bfirst\s+\d+\b/gi, 4, 'first N spots'],
+
+    // Stock trade records with buy/sell prices
+    [/\bbuy:\s*[\d.]+/gi, 4, 'stock buy price'],
+    [/\bsell:\s*[\d.]+/gi, 4, 'stock sell price'],
+
+    // DM me N word ("DM me 1 word", "DM me one word")
+    [/dm\s+me\s+(?:\d+|one|a)\s+word/gi, 4, 'dm trigger word'],
+
+    // Countdown triggers ("in 8 sec", "in 5 seconds")
+    [/in\s+\d+\s*sec(?:onds?)?/gi, 3, 'countdown trigger'],
+];
 
 // =============================================================================
 // SPAM DETECTION FUNCTIONS
@@ -583,6 +604,20 @@ function calculateSpamScore(text) {
                 weight,
                 count: matches.length,
                 contribution: weight * matches.length
+            };
+        }
+    }
+
+    // Check regex-based patterns (dynamic numbers, percentages, etc.)
+    for (const [pattern, weight, name] of SPAM_REGEX_PATTERNS) {
+        const matches = text.match(pattern);
+        if (matches) {
+            score += weight * matches.length;
+            matchedKeywords[`regex:${name}`] = {
+                weight,
+                count: matches.length,
+                contribution: weight * matches.length,
+                matches: matches.slice(0, 3)
             };
         }
     }
