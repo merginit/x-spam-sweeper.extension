@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.2] - 2026-01-09
+
+### Added
+- **Major Spam Pattern Expansion**: Significantly expanded detection database with modern spam infrastructure.
+  - **High-risk NSFW funnels**: `carrd.co`, `lnk.bio`, `taplink.cc`, `msha.ke`, `direct.me`, `socialtap.me`, `biolnk.at`, `slushy.com`, `fans.ly`
+  - **Crypto drainer domains**: `claim-*`, `pancakeswap-*`, `uniswap-*`, `walletconnect`, `trustwallet`, `revoke.cash`, `dapp-*`, `phantom-*`
+  - **Lookalike domain detection**: Regex pattern for Punycode/misspellings (e.g., `b1nance`, `c0inbase`, `metamask`)
+  - **Modern shorteners**: `t.ly`, `dub.sh`, `rb.gy`, `shorturl.at`, `tiny.cc`, `gg.gg`, `bit.do`, `rebrand.ly`, `snip.ly`, `v.gd`
+  - **Messaging bridges**: `line.me`, `signal.group`, `snapchat.com/add`
+- **Pig Butchering Keywords**: New detection for long-con investment scam tactics (`liquidity`, `passive returns`, `portfolio manager`, `signal group`, `insider trade`, `mentorship`, `wealth creation`, `seed phrase`, `connect wallet`, `gas fee`)
+- **Enhanced Romance Scam Detection**: Added `verification fee`, `gas money`, `hey hun`, `bored at home`, `spoiling`
+- **Adult Content Keywords**: Added `link in my bio`, `check my pinned`, `sub to me`, `live show`, `sexting`, `private session`, `top 0%`
+
+---
+
 ## [0.3.1] - 2026-01-09
 
 ### Added

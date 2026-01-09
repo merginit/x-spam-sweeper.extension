@@ -72,6 +72,20 @@ const HIGH_RISK_URL_PATTERNS = [
     /admireme\.vip/i,
     /my69private\.site/i,
     /b1anca\.com/i,
+    /onsx\.fun/i,
+    /j28t\.site/i,
+    /p78t\.com/i,
+    /slushy\.com/i,
+    /fans\.ly/i,
+
+    // NSFW / Adult Funnels (link aggregators heavily used by adult bots)
+    /carrd\.co/i,
+    /lnk\.bio/i,
+    /taplink\.cc/i,
+    /msha\.ke/i,
+    /direct\.me/i,
+    /socialtap\.me/i,
+    /biolnk\.at/i,
 
     // The "Holy Trinity" of DM Spam - Off-platform messaging
     /wa\.me\//i,              // WhatsApp shortlinks
@@ -85,6 +99,17 @@ const HIGH_RISK_URL_PATTERNS = [
     /binance\-/i,             // Fake Binance domains
     /coinbase\-/i,            // Fake Coinbase domains
     /metamask\-/i,            // Fake MetaMask domains
+    /claim\-/i,
+    /pancakeswap\-/i,
+    /uniswap\-/i,
+    /walletconnect/i,
+    /trustwallet/i,
+    /revoke\.cash/i,
+    /dapp\-/i,
+    /phantom\-/i,
+
+    // Lookalike domains (Punycode/misspellings of high-value targets)
+    /([01]inance|c[0o]inbase|met[a4]m[a4]sk|tr[u0]st|w[a4]llet)/i,
 ];
 
 /**
@@ -103,6 +128,16 @@ const MEDIUM_RISK_URL_PATTERNS = [
     /adf\.ly\//i,
     /shorte\.st/i,
     /cutt\.ly/i,
+    /t\.ly\//i,
+    /dub\.sh/i,
+    /rb\.gy/i,
+    /shorturl\.at/i,
+    /tiny\.cc/i,
+    /gg\.gg/i,
+    /bit\.do/i,
+    /rebrand\.ly/i,
+    /snip\.ly/i,
+    /v\.gd/i,
 
     // Link aggregators (often used by spam/promo accounts)
     /allmylinks\.com/i,
@@ -114,6 +149,12 @@ const MEDIUM_RISK_URL_PATTERNS = [
     /tapforallmylinks\.com/i,
     /mybios\.io/i,
     /justallmy\.link/i,
+    /getmysocial\.click/i,
+
+    // Messaging "bridge" links (pig-butchering and NSFW scams)
+    /line\.me/i,
+    /signal\.group/i,
+    /snapchat\.com\/add/i,
 
     // Discord invites (often crypto pump schemes)
     /discord\.gg\//i,
@@ -182,6 +223,19 @@ const SPAM_KEYWORD_WEIGHTS = {
     'free money': 5,
     'double your': 5,
 
+    // Pig Butchering / Long-con investment tactics
+    'liquidity': 3,
+    'passive returns': 4,
+    'portfolio manager': 3,
+    'signal group': 4,
+    'insider trade': 4,
+    'mentorship': 3,
+    'wealth creation': 3,
+    'seed phrase': 5,
+    'connect wallet': 5,
+    'gas fee': 3,
+    'reimbursement': 3,
+
     // Urgency/pressure tactics (weight: 2-4)
     'urgent': 3,
     'act now': 4,
@@ -212,7 +266,7 @@ const SPAM_KEYWORD_WEIGHTS = {
     'text me': 3,
     'dm me on': 3,
 
-    // Romance scam indicators (weight: 2-3)
+    // Romance scam indicators (weight: 2-5)
     'lonely': 2,
     'looking for love': 3,
     'sugar daddy': 4,
@@ -220,14 +274,26 @@ const SPAM_KEYWORD_WEIGHTS = {
     'sugar baby': 3,
     'allowance': 2,
     'spoil you': 3,
+    'spoiling': 3,
+    'verification fee': 5,
+    'gas money': 3,
+    'hey hun': 3,
+    'bored at home': 2,
 
     // Adult content promotion (weight: 3-4)
     'onlyfans': 4,
     'fansly': 4,
     'link in bio': 2,
+    'link in my bio': 3,
     'check my profile': 2,
+    'check my pinned': 3,
     'exclusive content': 3,
     'subscribe': 2,
+    'sub to me': 3,
+    'live show': 4,
+    'sexting': 4,
+    'private session': 3,
+    'top 0%': 3,
 };
 
 // =============================================================================
