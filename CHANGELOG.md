@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.3] - 2026-01-09
+
+### Added
+- **Massive Spam Pattern Expansion**: Added 176 new keyword patterns targeting modern DM spam tactics:
+  - **Adult Content (Extended)**: `uncensored`, `raw photos`, `no panties`, `cumslut`, `nude chat`, `tight holes`, `make you throb`, `bimbo mode`, `going wild on myself`
+  - **Engagement Bait Openers**: `are you busy`, `can i ask you something`, `spotted your comment`, `you seem familiar`, `okay confession`, `reaching out from a backup`, `not very active here`
+  - **FOMO/Urgency Tactics**: `for the next 24h`, `next 15 minutes`, `till midnight`, `free verification phase`, `your access is waiting`, `begin free now`
+  - **Stock/Investment Pump Schemes**: `stock blogger`, `market analysis team`, `trade setups`, `crypto signals`, `transform potential into profit`, `never recommends junk`
+  - **Fake Intimacy Hooks**: `hey cutie`, `desperate for touch`, `playing with myself`, `one click away`, `door wide open`, `come prove me right`
+  - **Explicit Solicitation**: `dm me 1 word`, `invaded your dms`, `obey me`, `quit staring`, `nasty you'll be addicted`
+  - **Vague Teaser Hooks**: `i need to tell you something`, `it will be short`, `you got this far`, `don't dare stop`
+
+---
+
 ## [0.3.2] - 2026-01-09
 
 ### Added
