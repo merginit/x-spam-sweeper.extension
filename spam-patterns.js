@@ -70,6 +70,8 @@ const HIGH_RISK_URL_PATTERNS = [
     /mym\.fans/i,
     /fancentro\.com/i,
     /admireme\.vip/i,
+    /my69private\.site/i,
+    /b1anca\.com/i,
 
     // The "Holy Trinity" of DM Spam - Off-platform messaging
     /wa\.me\//i,              // WhatsApp shortlinks
@@ -108,6 +110,10 @@ const MEDIUM_RISK_URL_PATTERNS = [
     /beacons\.ai/i,
     /solo\.to/i,
     /linktr\.ee/i,
+    /onlysites\.co/i,
+    /tapforallmylinks\.com/i,
+    /mybios\.io/i,
+    /justallmy\.link/i,
 
     // Discord invites (often crypto pump schemes)
     /discord\.gg\//i,

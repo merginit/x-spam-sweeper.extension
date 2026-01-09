@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.1] - 2026-01-09
+
+### Added
+- **Spam URL Patterns**: Added new domains to blocklist:
+  - High-risk: `my69private.site`, `b1anca.com`
+  - Medium-risk (link aggregators): `onlysites.co`, `tapforallmylinks.com`, `mybios.io`, `justallmy.link`
+
+---
+
 ## [0.3.0] - 2025-12-14
 
 ### Added
