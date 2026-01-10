@@ -77,6 +77,9 @@ const HIGH_RISK_URL_PATTERNS = [
     /p78t\.com/i,
     /slushy\.com/i,
     /fans\.ly/i,
+    /loyalfans\.com/i,
+    /throne\.com/i,
+    /iwantclips\.com/i,
 
     // NSFW / Adult Funnels (link aggregators heavily used by adult bots)
     /carrd\.co/i,

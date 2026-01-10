@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.5] - 2026-01-10
+
+### Added
+- **Spam URL Patterns**: Added new adult content/creator platforms to high-risk blocklist:
+  - `loyalfans.com`, `throne.com`, `iwantclips.com`
+
+---
+
 ## [0.3.4] - 2026-01-09
 
 ### Added
