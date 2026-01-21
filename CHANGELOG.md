@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.6] - 2026-01-21
+
+### Added
+- **Spam URL Patterns**: Added new link aggregators to medium-risk blocklist:
+  - `claimmysocial.com`, `getmysocials.me`, `allmysocial.me`, `etmysocial.me`
+
+---
+
 ## [0.3.5] - 2026-01-10
 
 ### Added

@@ -153,6 +153,10 @@ const MEDIUM_RISK_URL_PATTERNS = [
     /mybios\.io/i,
     /justallmy\.link/i,
     /getmysocial\.click/i,
+    /claimmysocial\.com/i,
+    /getmysocials\.me/i,
+    /allmysocial\.me/i,
+    /etmysocial\.me/i,
 
     // Messaging "bridge" links (pig-butchering and NSFW scams)
     /line\.me/i,
