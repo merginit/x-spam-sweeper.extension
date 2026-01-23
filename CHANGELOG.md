@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.7] - 2026-01-23
+
+### Added
+- **Spam URL Patterns**: Added new link aggregators to medium-risk blocklist:
+  - `gmscl.com`, `getmysociale.com`, `tapformy.social`, `getmysocials.net`
+
+---
+
 ## [0.3.6] - 2026-01-21
 
 ### Added

@@ -155,8 +155,12 @@ const MEDIUM_RISK_URL_PATTERNS = [
     /getmysocial\.click/i,
     /claimmysocial\.com/i,
     /getmysocials\.me/i,
+    /getmysocials\.net/i,
     /allmysocial\.me/i,
     /etmysocial\.me/i,
+    /gmscl\.com/i,
+    /getmysociale\.com/i,
+    /tapformy\.social/i,
 
     // Messaging "bridge" links (pig-butchering and NSFW scams)
     /line\.me/i,
