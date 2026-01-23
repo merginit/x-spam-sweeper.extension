@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>X Spam Sweeper - Batch Report & Block Spam on X</title>
+    <meta name="description"
+        content="A lightweight Chrome extension to batch report and block spam accounts in X Messages.">
+    <style>
+        :root {
+            --bg-primary: #000000;
+            --bg-secondary: #000000;
+            --bg-card: #16181c;
+            --bg-tertiary: #202327;
+            --text-primary: #e7e9ea;
+            --text-secondary: #71767b;
+            --accent: #1d9bf0;
+            --accent-hover: #1a8cd8;
+            --danger: #f4212e;
+            --success: #00ba7c;
+            --border: #2f3336;
+            --max-width: 1000px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: var(--max-width);
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+
+        /* Nav */
+        nav {
+            padding: 20px 0;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(12px);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .nav-logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 700;
+            font-size: 20px;
+            text-decoration: none;
+            color: var(--text-primary);
+        }
+
+        .nav-logo img {
+            width: 32px;
+            height: 32px;
+        }
+
+        /* Hero */
+        .hero {
+            padding: 100px 0 60px;
+            text-align: center;
+        }
+
+        .hero h1 {
+            font-size: 4rem;
+            font-weight: 900;
+            margin-bottom: 24px;
+            background: linear-gradient(180deg, #fff 0%, #71767b 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hero p {
+            font-size: 1.5rem;
+            color: var(--text-secondary);
+            max-width: 700px;
+            margin: 0 auto 40px;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 16px 32px;
+            border-radius: 9999px;
+            font-size: 18px;
+            font-weight: 700;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            border: 1px solid transparent;
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            color: white;
+            border-color: var(--accent);
+        }
+
+        .btn-primary:hover {
+            background: transparent;
+            color: var(--accent);
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            margin-left: 16px;
+        }
+
+        .btn-outline:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        /* Main Preview */
+        .preview-container {
+            margin: 60px 0;
+            position: relative;
+            background: var(--bg-card);
+            border-radius: 24px;
+            padding: 40px;
+            border: 1px solid var(--border);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+        }
+
+        .preview-grid {
+            display: grid;
+            grid-template-columns: 1fr 1.2fr;
+            gap: 40px;
+            align-items: center;
+        }
+
+        .preview-image {
+            width: 100%;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border);
+        }
+
+        /* Features */
+        .features {
+            padding: 80px 0;
+        }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: 60px;
+        }
+
+        .section-header h2 {
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin-bottom: 16px;
+        }
+
+        .section-header p {
+            color: var(--text-secondary);
+            font-size: 1.2rem;
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 24px;
+        }
+
+        .feature-card {
+            background: var(--bg-card);
+            padding: 32px;
+            border-radius: 20px;
+            border: 1px solid var(--border);
+            transition: all 0.3s ease;
+        }
+
+        .feature-card:hover {
+            background: transparent;
+            border-color: var(--accent);
+        }
+
+        .feature-icon {
+            width: 48px;
+            height: 48px;
+            background: rgba(29, 155, 240, 0.1);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 24px;
+            color: var(--accent);
+        }
+
+        .feature-card h3 {
+            font-size: 1.5rem;
+            margin-bottom: 16px;
+        }
+
+        .feature-card p {
+            color: var(--text-secondary);
+        }
+
+        /* Risk Levels */
+        .risk-levels {
+            background: var(--bg-card);
+            padding: 40px;
+            border-radius: 20px;
+            margin-top: 40px;
+            border: 1px solid var(--border);
+        }
+
+        .risk-grid {
+            display: flex;
+            gap: 20px;
+            margin-top: 24px;
+        }
+
+        .risk-item {
+            flex: 1;
+            padding: 16px;
+            border-radius: 12px;
+            border-left: 4px solid var(--border);
+            background: var(--bg-tertiary);
+        }
+
+        .risk-high {
+            border-color: var(--danger);
+        }
+
+        .risk-medium {
+            border-color: #f5a623;
+        }
+
+        .risk-low {
+            border-color: var(--success);
+        }
+
+        /* Installation */
+        .installation {
+            padding: 80px 0;
+            background: linear-gradient(180deg, var(--bg-primary) 0%, #0a0a0a 100%);
+        }
+
+        .step-list {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .step {
+            display: flex;
+            gap: 24px;
+            margin-bottom: 32px;
+        }
+
+        .step-num {
+            width: 40px;
+            height: 40px;
+            background: var(--accent);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            flex-shrink: 0;
+        }
+
+        code {
+            background: var(--bg-tertiary);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: monospace;
+        }
+
+        /* Footer */
+        footer {
+            padding: 60px 0;
+            border-top: 1px solid var(--border);
+            text-align: center;
+            color: var(--text-secondary);
+        }
+
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+
+            .preview-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .hero p {
+                font-size: 1.1rem;
+            }
+
+            .risk-grid {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <nav>
+        <div class="container" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+            <a href="#" class="nav-logo">
+                <img src="assets/icon.png" alt="X Spam Sweeper">
+                X Spam Sweeper
+            </a>
+            <div class="nav-links">
+                <a href="https://github.com/merginit/x-spam-sweeper.extension" class="btn btn-outline"
+                    style="padding: 8px 20px; font-size: 14px;">GitHub</a>
+            </div>
+        </div>
+    </nav>
+
+    <header class="hero">
+        <div class="container">
+            <h1 style="font-size: 6rem;">X Spam Sweeper</h1>
+            <p>A lightweight Chrome extension to batch report and block spam accounts in X (Twitter) Messages.</p>
+            <div class="actions">
+                <a href="#install" class="btn btn-primary">Get Started</a>
+                <a href="https://github.com/merginit/x-spam-sweeper.extension" class="btn btn-outline">View
+                    Repository</a>
+            </div>
+        </div>
+    </header>
+
+    <section class="container">
+        <div class="preview-container">
+            <div class="preview-grid">
+                <div>
+                    <h2 style="font-size: 2rem; margin-bottom: 20px;">Clean your inbox in seconds.</h2>
+                    <p style="color: var(--text-secondary); margin-bottom: 24px;">Tired of manually dealing with dozens
+                        of spam message requests? X Spam Sweeper lets you view, select, and batch-process spam accounts
+                        directly from a convenient popup saving you time and clicks.</p>
+                    <ul style="list-style: none; color: var(--text-secondary);">
+                        <li style="margin-bottom: 12px; display: flex; align-items: center; gap: 10px;">
+                            <span style="color: var(--success);">✓</span> One-click Sweep: Report → Block → Delete
+                        </li>
+                        <li style="margin-bottom: 12px; display: flex; align-items: center; gap: 10px;">
+                            <span style="color: var(--success);">✓</span> AI-powered Spam Detection (Gemini Nano)
+                        </li>
+                        <li style="margin-bottom: 12px; display: flex; align-items: center; gap: 10px;">
+                            <span style="color: var(--success);">✓</span> Native X Design Language
+                        </li>
+                    </ul>
+                </div>
+                <div>
+                    <img src="assets/popup--actions-menu.png" alt="X Spam Sweeper Interface" class="preview-image">
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="features">
+        <div class="container">
+            <div class="section-header">
+                <h2>Powerful Capabilities</h2>
+                <p>Designed to be privacy-first, fast, and effective.</p>
+            </div>
+
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                        </svg>
+                    </div>
+                    <h3>Smart Scoring</h3>
+                    <p>Privacy-first filtering with a 0-30 point scale. Analyzes URLs, keywords, and AI risk factors
+                        locally.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="9 11 12 14 22 4" />
+                            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
+                        </svg>
+                    </div>
+                    <h3>Multi-Select</h3>
+                    <p>Select individual accounts or use "Select All" to choose multiple spammers for batch processing.
+                    </p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+                            <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+                        </svg>
+                    </div>
+                    <h3>Link Resolution</h3>
+                    <p>Securely resolves t.co shortlinks to identify actual destination domains before you ever click
+                        them.</p>
+                </div>
+            </div>
+
+            <div class="risk-levels">
+                <h3>Visual Risk Indicators</h3>
+                <p style="color: var(--text-secondary);">Instantly identify suspicious messages with color-coded badges.
+                </p>
+                <div class="risk-grid">
+                    <div class="risk-item risk-high">
+                        <strong style="color: var(--danger);">HIGH RISK</strong>
+                        <p style="font-size: 14px; margin-top: 8px;">Score ≥ 20. Likely blatant spam or malicious links.
+                        </p>
+                    </div>
+                    <div class="risk-item risk-medium">
+                        <strong style="color: #f5a623;">MEDIUM RISK</strong>
+                        <p style="font-size: 14px; margin-top: 8px;">Score ≥ 10. Suspicious keywords or patterns found.
+                        </p>
+                    </div>
+                    <div class="risk-item risk-low">
+                        <strong style="color: var(--success);">LOW RISK</strong>
+                        <p style="font-size: 14px; margin-top: 8px;">Score ≥ 3. Mild indicators found, use caution.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="install" class="installation">
+        <div class="container">
+            <div class="section-header">
+                <h2>Installation</h2>
+                <p>Get up and running in minutes.</p>
+            </div>
+
+            <div class="step-list">
+                <div class="step">
+                    <div class="step-num">1</div>
+                    <div class="step-content">
+                        <h3>Clone Node</h3>
+                        <p>Clone the repository:<br>
+                            <code>git clone https://github.com/merginit/x-spam-sweeper.extension.git</code>
+                        </p>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-num">2</div>
+                    <div class="step-content">
+                        <h3>Extensions Page</h3>
+                        <p>Open Chrome and navigate to <code>chrome://extensions</code>.<br>
+                            Enable "Developer mode".</p>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-num">3</div>
+                    <div class="step-content">
+                        <h3>Load Unpacked</h3>
+                        <p>Click "Load unpacked" and select the cloned repository folder.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="container" style="padding: 80px 24px;">
+        <div
+            style="background: var(--bg-card); padding: 40px; border-radius: 20px; text-align: center; border: 1px solid var(--border);">
+            <h2 style="margin-bottom: 20px;">Privacy & Security</h2>
+            <p style="color: var(--text-secondary); max-width: 800px; margin: 0 auto;">No analytics, tracking, or
+                external requests. All processing happens locally in your browser. The extension only reads data from
+                the X messages page; it does not store or transmit any information externally.</p>
+        </div>
+    </section>
+
+    <footer>
+        <div class="container">
+            <p>Copyright ©
+                <script>document.write(new Date().getFullYear())</script> Jonas Fröller. Licensed under GPLv3.
+            </p>
+            <p style="margin-top: 8px; font-size: 12px;">X Spam Sweeper is not affiliated with X Corp.</p>
+        </div>
+    </footer>
+</body>
+
+</html>
