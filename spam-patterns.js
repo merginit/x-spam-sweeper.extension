@@ -486,6 +486,43 @@ const SPAM_KEYWORD_WEIGHTS = {
     'you got this far': 2,
     'don\'t dare stop': 3,
     'still here still soft': 3,
+
+    // =========================================================================
+    // 2024-2025 TRENDING SPAM PATTERNS
+    // =========================================================================
+
+    // Enhanced Crypto/Investment
+    'mining pool': 4,
+    'liquidity pool': 3,
+    'staking rewards': 3,
+    'new ico': 4,
+    'pump and dump': 5,
+    'risk-free': 4,
+    'recovery phrase': 5,
+    'private key': 5,
+    'send me 1 eth': 5,
+    'send me 1 btc': 5,
+    'verify your wallet': 4,
+    'security alert': 3,
+
+    // Enhanced Romance/Pig Butchering
+    'working overseas': 3,
+    'in the military': 3,
+    'oil rig': 4,
+    'bad internet': 3,
+    'recently widowed': 3,
+    'medical emergency': 4,
+    'customs fees': 4,
+    'shipping fees': 3,
+    'never felt this way': 3,
+    'soulmate': 2,
+
+    // Adult/Meetup scams
+    'paid meetup': 4,
+    'meetup available': 3,
+    'gf experience': 4,
+    'girlfriend experience': 4,
+    'booking info': 2, // Often used by "agencies"
 };
 
 /**
@@ -515,6 +552,13 @@ const SPAM_REGEX_PATTERNS = [
 
     // Countdown triggers ("in 8 sec", "in 5 seconds")
     [/in\s+\d+\s*sec(?:onds?)?/gi, 3, 'countdown trigger'],
+
+    // Send crypto requests ("Send 0.1 ETH", "Deposit 500 USDT")
+    [/(?:send|deposit)\s+\d+(?:\.\d+)?\s*(?:eth|btc|sol|bnb|usdt|usdc)/gi, 5, 'crypto deposit request'],
+
+    // "Check bio" variations
+    [/check\s*(?:my)?\s*bio/gi, 2, 'check bio'],
+    [/link\s*(?:is)?\s*in\s*(?:my)?\s*bio/gi, 3, 'link in bio'],
 ];
 
 // =============================================================================
