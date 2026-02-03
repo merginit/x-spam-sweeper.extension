@@ -61,58 +61,49 @@ if (typeof chrome !== 'undefined' && chrome.storage) {
  * Off-platform redirects are the primary indicator of spam/scam DMs
  */
 const HIGH_RISK_URL_PATTERNS = [
-    // Adult content platforms
-    /onlyfans\.com/i,
+    /([01]inance|c[0o]inbase|met[a4]m[a4]sk|tr[u0]st|w[a4]llet)/i,
+    /admireme\.vip/i,
+    /api\.whatsapp\.com/i,    // WhatsApp API links
+    /b1anca\.com/i,
+    /binance\-/i,             // Fake Binance domains
+    /biolnk\.at/i,
+    /carrd\.co/i,
+    /chat\.whatsapp\.com/i,   // WhatsApp groups
+    /claim\-/i,
+    /coinbase\-/i,            // Fake Coinbase domains
+    /dapp\-/i,
+    /direct\.me/i,
+    /fancentro\.com/i,
+    /fans\.ly/i,
     /fansly\.com/i,
     /fanvue\.com/i,
+    /iwantclips\.com/i,
+    /j28t\.site/i,
+    /lnk\.bio/i,
+    /loyalfans\.com/i,
     /maloum\.com/i,
     /manyvids\.com/i,
-    /mym\.fans/i,
-    /fancentro\.com/i,
-    /admireme\.vip/i,
-    /my69private\.site/i,
-    /b1anca\.com/i,
-    /onsx\.fun/i,
-    /j28t\.site/i,
-    /p78t\.com/i,
-    /slushy\.com/i,
-    /fans\.ly/i,
-    /loyalfans\.com/i,
-    /throne\.com/i,
-    /iwantclips\.com/i,
-
-    // NSFW / Adult Funnels (link aggregators heavily used by adult bots)
-    /carrd\.co/i,
-    /lnk\.bio/i,
-    /taplink\.cc/i,
+    /metamask\-/i,            // Fake MetaMask domains
     /msha\.ke/i,
-    /direct\.me/i,
+    /my69private\.site/i,
+    /mym\.fans/i,
+    /onlyfans\.com/i,
+    /onsx\.fun/i,
+    /p78t\.com/i,
+    /pancakeswap\-/i,
+    /phantom\-/i,
+    /revoke\.cash/i,
+    /slushy\.com/i,
     /socialtap\.me/i,
-    /biolnk\.at/i,
-
-    // The "Holy Trinity" of DM Spam - Off-platform messaging
-    /wa\.me\//i,              // WhatsApp shortlinks
-    /chat\.whatsapp\.com/i,   // WhatsApp groups
-    /api\.whatsapp\.com/i,    // WhatsApp API links
     /t\.me\//i,               // Telegram
+    /taplink\.cc/i,
     /telegram\.me/i,          // Telegram alternative
     /telegram\.org/i,
-
-    // Crypto/Investment scam domains (common patterns)
-    /binance\-/i,             // Fake Binance domains
-    /coinbase\-/i,            // Fake Coinbase domains
-    /metamask\-/i,            // Fake MetaMask domains
-    /claim\-/i,
-    /pancakeswap\-/i,
-    /uniswap\-/i,
-    /walletconnect/i,
+    /throne\.com/i,
     /trustwallet/i,
-    /revoke\.cash/i,
-    /dapp\-/i,
-    /phantom\-/i,
-
-    // Lookalike domains (Punycode/misspellings of high-value targets)
-    /([01]inance|c[0o]inbase|met[a4]m[a4]sk|tr[u0]st|w[a4]llet)/i,
+    /uniswap\-/i,
+    /wa\.me\//i,              // WhatsApp shortlinks
+    /walletconnect/i,
 ];
 
 /**
@@ -120,93 +111,84 @@ const HIGH_RISK_URL_PATTERNS = [
  * Generic shorteners and invite links
  */
 const MEDIUM_RISK_URL_PATTERNS = [
-    // URL shorteners (often used to hide malicious links)
-    /bit\.ly\//i,
-    /tinyurl\.com/i,
-    /t\.co\//i,               // Twitter's own shortener (still suspicious in DMs)
-    /goo\.gl\//i,
-    /ow\.ly\//i,
-    /is\.gd\//i,
-    /buff\.ly\//i,
+    /\/airdrop/i,
+    /\/crypto/i,
+    /\/giveaway/i,
+    /\/investment/i,
+    /\/trading/i,
     /adf\.ly\//i,
-    /shorte\.st/i,
-    /cutt\.ly/i,
-    /t\.ly\//i,
-    /dub\.sh/i,
-    /rb\.gy/i,
-    /shorturl\.at/i,
-    /tiny\.cc/i,
-    /gg\.gg/i,
-    /bit\.do/i,
-    /rebrand\.ly/i,
-    /snip\.ly/i,
-    /v\.gd/i,
-
-    // Link aggregators (often used by spam/promo accounts)
     /allmylinks\.com/i,
-    /getmysocial\.com/i,
+    /allmysocial\.me/i,
     /beacons\.ai/i,
-    /solo\.to/i,
-    /linktr\.ee/i,
-    /onlysites\.co/i,
-    /tapforallmylinks\.com/i,
-    /mybios\.io/i,
-    /justallmy\.link/i,
-    /getmysocial\.click/i,
+    /bit\.do/i,
+    /bit\.ly\//i,
+    /buff\.ly\//i,
     /claimmysocial\.com/i,
+    /cutt\.ly/i,
+    /discord\.com\/invite/i,
+    /discord\.gg\//i,
+    /dub\.sh/i,
+    /etmysocial\.me/i,
+    /getmysocial\.click/i,
+    /getmysocial\.com/i,
+    /getmysocial\.net/i,
+    /getmysociale\.com/i,
     /getmysocials\.me/i,
     /getmysocials\.net/i,
-    /allmysocial\.me/i,
-    /etmysocial\.me/i,
+    /gg\.gg/i,
     /gmscl\.com/i,
-    /getmysociale\.com/i,
-    /tapformy\.social/i,
-    /tapfor\.social/i,
     /gmysocial\.com/i,
-    /unlockmysocial\.com/i,
-    /getmysocial\.net/i,
-    /thisismy\.social/i,
-
-    // Messaging "bridge" links (pig-butchering and NSFW scams)
+    /goo\.gl\//i,
+    /is\.gd\//i,
+    /justallmy\.link/i,
     /line\.me/i,
+    /linktr\.ee/i,
+    /mybios\.io/i,
+    /onlysites\.co/i,
+    /ow\.ly\//i,
+    /rb\.gy/i,
+    /rebrand\.ly/i,
+    /shorte\.st/i,
+    /shorturl\.at/i,
     /signal\.group/i,
     /snapchat\.com\/add/i,
-
-    // Discord invites (often crypto pump schemes)
-    /discord\.gg\//i,
-    /discord\.com\/invite/i,
-
-    // Suspicious path keywords in any URL
-    /\/trading/i,
-    /\/crypto/i,
-    /\/investment/i,
-    /\/airdrop/i,
-    /\/giveaway/i,
+    /snip\.ly/i,
+    /solo\.to/i,
+    /t\.co\//i,               // Twitter's own shortener (still suspicious in DMs)
+    /t\.ly\//i,
+    /tapfor\.social/i,
+    /tapforallmylinks\.com/i,
+    /tapformy\.social/i,
+    /thisismy\.social/i,
+    /tiny\.cc/i,
+    /tinyurl\.com/i,
+    /unlockmysocial\.com/i,
+    /v\.gd/i,
 ];
 
 /**
  * Safe domains (whitelist) - Won't trigger spam flags
  */
 const SAFE_DOMAINS = [
-    'youtube.com',
-    'youtu.be',
+    'bandcamp.com',
+    'buymeacoffee.com',
+    'facebook.com',
+    'github.com',
+    'instagram.com',
+    'ko-fi.com',
+    'linkedin.com',
+    'medium.com',
+    'patreon.com',
+    'reddit.com',
+    'soundcloud.com',
+    'spotify.com',
+    'substack.com',
+    'tiktok.com',
+    'twitch.tv',
     'twitter.com',
     'x.com',
-    'spotify.com',
-    'github.com',
-    'linkedin.com',
-    'instagram.com',
-    'facebook.com',
-    'tiktok.com',
-    'reddit.com',
-    'medium.com',
-    'substack.com',
-    'twitch.tv',
-    'soundcloud.com',
-    'bandcamp.com',
-    'patreon.com',
-    'ko-fi.com',
-    'buymeacoffee.com',
+    'youtu.be',
+    'youtube.com',
 ];
 
 // =============================================================================
