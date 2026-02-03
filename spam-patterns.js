@@ -64,7 +64,7 @@ const HIGH_RISK_URL_PATTERNS = [
     /([01]inance|c[0o]inbase|met[a4]m[a4]sk|tr[u0]st|w[a4]llet)/i,
     /admireme\.vip/i,
     /api\.whatsapp\.com/i,    // WhatsApp API links
-    /b1anca\.com/i,
+    /b1anca\.com/i,           // Aggressive Model
     /binance\-/i,             // Fake Binance domains
     /biolnk\.at/i,
     /carrd\.co/i,
@@ -78,7 +78,6 @@ const HIGH_RISK_URL_PATTERNS = [
     /fansly\.com/i,
     /fanvue\.com/i,
     /iwantclips\.com/i,
-    /j28t\.site/i,
     /lnk\.bio/i,
     /loyalfans\.com/i,
     /maloum\.com/i,
@@ -89,7 +88,6 @@ const HIGH_RISK_URL_PATTERNS = [
     /mym\.fans/i,
     /onlyfans\.com/i,
     /onsx\.fun/i,
-    /p78t\.com/i,
     /pancakeswap\-/i,
     /phantom\-/i,
     /revoke\.cash/i,
@@ -154,7 +152,6 @@ const MEDIUM_RISK_URL_PATTERNS = [
     /snapchat\.com\/add/i,
     /snip\.ly/i,
     /solo\.to/i,
-    /t\.co\//i,               // Twitter's own shortener (still suspicious in DMs)
     /t\.ly\//i,
     /tapfor\.social/i,
     /tapforallmylinks\.com/i,
