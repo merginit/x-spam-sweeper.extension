@@ -184,6 +184,7 @@ const MEDIUM_RISK_URL_PATTERNS = [
     /thisismy\.social/i,
     /tiny\.cc/i,
     /tinyurl\.com/i,
+    /touchmy\.social/i,
     /unlockmysocial\.com/i,
     /url\.bio/i,
     /v\.gd/i,
