@@ -488,6 +488,13 @@ const SPAM_KEYWORD_WEIGHTS = {
     'don\'t dare stop': 3,
     'still here still soft': 3,
 
+    // Lazy AI / Overused Marketing Buzzwords (weight: 3)
+    'game-changer': 3,
+    'game changer': 3,
+    'the real unlock': 3,
+    'unlock the power': 3,
+    'scaling to the moon': 3,
+
     // =========================================================================
     // 2024-2025 TRENDING SPAM PATTERNS
     // =========================================================================
