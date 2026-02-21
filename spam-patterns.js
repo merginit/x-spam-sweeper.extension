@@ -141,6 +141,7 @@ const MEDIUM_RISK_URL_PATTERNS = [
     /flow\.page/i,
     /getmysocial\.click/i,
     /getmysocial\.com/i,
+    /getmysocial\.ink/i,
     /getmysocial\.net/i,
     /getmysociale\.com/i,
     /getmysocials\.me/i,

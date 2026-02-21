@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.8] - 2026-02-21
+
+### Added
+- **Spam URL Patterns**: Added `getmysocial.ink` to medium-risk blocklist.
+
+---
+
 ## [0.3.7] - 2026-01-23
 
 ### Added
